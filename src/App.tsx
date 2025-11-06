@@ -2,7 +2,7 @@ import { Button, Icon, Layout } from "@stellar/design-system";
 import "./App.module.css";
 import ConnectAccount from "./components/ConnectAccount.tsx";
 import { Routes, Route, Outlet, NavLink } from "react-router-dom";
-import Home from "./pages/Home";
+import Home from "./pages/ScaffoldHome.tsx";
 import Debugger from "./pages/Debugger.tsx";
 
 const AppLayout: React.FC = () => (
@@ -56,8 +56,10 @@ const AppLayout: React.FC = () => (
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<div>Hello World</div>} />
+
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Home />} />
+        <Route path="/scaffold" element={<Home />} />
         <Route path="/debug" element={<Debugger />} />
         <Route path="/debug/:contractName" element={<Debugger />} />
       </Route>

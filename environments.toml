@@ -4,6 +4,11 @@ rpc-url = "http://localhost:8000/rpc"
 network-passphrase = "Standalone Network ; February 2017"
 run-locally = true # automatically start the local network container, if not already running
 
+# [development.network]
+# rpc-url = "https://soroban-testnet.stellar.org"
+# network-passphrase = "Test SDF Network ; September 2015"
+# run-locally = false
+
 [[development.accounts]]
 name = "me" # Required. Keys for this account will be saved to `./.stellar/identity`
 default = true # Optional. Whether to use this account as the `--source` for commands that need one.
@@ -11,6 +16,14 @@ default = true # Optional. Whether to use this account as the `--source` for com
 [development.contracts]
 fungible_allowlist_example = { client = true, constructor_args = "--admin me --manager me --initial_supply 1000000000000000000000000" }
 nft_enumerable_example = { client = true, constructor_args = "--owner me" }
+
+[development.contracts.dj_fungible]
+client = true
+constructor_args = "--admin me --manager me --initial_supply 1000000000000000000000"
+
+[development.contracts.factory]
+client = true
+constructor_args = "--admin me --token CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC --fungible_wasm 83a316c7f943f155817bbf6b20fbca25c48b1583ca16a8011f006345146957fe"
 
 # Rather than in one list, TOML allows specifying contracts in their own "sections"
 [development.contracts.guess_the_number]
