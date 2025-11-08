@@ -1,0 +1,587 @@
+main {
+  padding-bottom: 64px;
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+}
+
+/* Override Stellar Design System Layout styles for dark theme */
+main :global([class*="Layout_Content"]) {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+main :global([class*="Layout_Inset"]) {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+main :global([class*="Layout_Header"]) {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header container wrapper for proper spacing */
+main :global([class*="Layout_Header"] > *) {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  min-height: 64px;
+}
+
+/* Hide the default Stellar project title/button that appears on the left */
+/* Target the first child div that contains the project title (but not our logo) */
+main
+  :global([class*="Layout_Header"] > div:first-child:not([class*="Content"])) {
+  display: none !important;
+}
+
+/* Also hide any direct project links/buttons */
+main :global([class*="Layout_Header"] [class*="Header_Project"]),
+main :global([class*="Layout_Header"] [class*="Project"]) {
+  display: none !important;
+}
+
+/* Header center section - Logo + Profile Type Selector */
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 0 0 auto;
+}
+
+/* Show and style the contentCenter */
+main :global([class*="Layout_Header"] [class*="Header_ContentCenter"]),
+main :global([class*="Layout_Header"] [class*="ContentCenter"]) {
+  display: flex !important;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  border-right: 1px solid var(--border);
+}
+
+/* Ensure header right content is properly positioned */
+main :global([class*="Layout_Header"] [class*="Header_ContentRight"]),
+main :global([class*="Layout_Header"] [class*="ContentRight"]) {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  flex-wrap: nowrap;
+  padding-left: 24px;
+  padding-right: 24px;
+  gap: 0;
+}
+
+/* Better mobile header layout */
+@media (max-width: 640px) {
+  main :global([class*="Layout_Header"]) {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  main :global([class*="Layout_Header"] > *) {
+    padding: 0 12px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentCenter"]),
+  main :global([class*="Layout_Header"] [class*="ContentCenter"]) {
+    flex: 0 0 auto;
+    margin-right: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentRight"]),
+  main :global([class*="Layout_Header"] [class*="ContentRight"]) {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
+    padding-left: 8px;
+  }
+
+  .header-center {
+    gap: 12px;
+  }
+
+  .header-divider-vertical {
+    display: none;
+  }
+}
+
+/* Header right content styling */
+.header-content-right {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* Vertical dividers in header */
+.header-divider-vertical {
+  width: 1px;
+  height: 32px;
+  background-color: var(--border);
+  opacity: 0.3;
+  margin: 0 16px;
+  flex-shrink: 0;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 0 8px;
+}
+
+.header-nav-developer {
+  padding-right: 16px;
+}
+
+.header-debug-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.header-debug-button {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  border: 1px solid var(--border) !important;
+  background-color: transparent !important;
+  color: var(--text-tertiary) !important;
+  padding: 6px 12px !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  opacity: 0.8;
+}
+
+.header-debug-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border) !important;
+  opacity: 1;
+}
+
+.header-debug-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.debug-button-text {
+  margin-left: 6px;
+}
+
+/* Style the Connect Wallet button */
+main :global(.wallet-connect-button),
+main :global([class*="Button"][class*="primary"]) {
+  background-color: var(--accent) !important;
+  color: #030712 !important;
+  font-weight: 600 !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(252, 211, 77, 0.3) !important;
+  white-space: nowrap;
+}
+
+main :global(.wallet-connect-button):hover,
+main :global([class*="Button"][class*="primary"]):hover {
+  background-color: #fbbf24 !important;
+  box-shadow: 0 4px 8px rgba(252, 211, 77, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+main :global(.wallet-connect-button):active,
+main :global([class*="Button"][class*="primary"]):active {
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 2px rgba(252, 211, 77, 0.3) !important;
+}
+
+/* Mobile adjustments for Connect button */
+@media (max-width: 640px) {
+  main :global(.wallet-connect-button),
+  main :global([class*="Button"][class*="primary"]) {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  main :global(.wallet-connect-button),
+  main :global([class*="Button"][class*="primary"]) {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  main :global(.wallet-connect-button),
+  main :global([class*="Button"][class*="primary"]) {
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* Remove duplicate rule - handled above */
+
+/* Tablet and small desktop adjustments */
+@media (max-width: 1024px) {
+  main :global([class*="Layout_Header"] > *) {
+    padding: 0 20px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentCenter"]),
+  main :global([class*="Layout_Header"] [class*="ContentCenter"]) {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentRight"]),
+  main :global([class*="Layout_Header"] [class*="ContentRight"]) {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .header-center {
+    gap: 16px;
+  }
+
+  .header-divider-vertical {
+    margin: 0 12px;
+    height: 28px;
+  }
+}
+
+/* Mobile/Tablet adjustments */
+@media (max-width: 768px) {
+  main :global([class*="Layout_Header"]) {
+    min-height: 56px;
+  }
+
+  main :global([class*="Layout_Header"] > *) {
+    padding: 0 12px;
+    min-height: 56px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentCenter"]),
+  main :global([class*="Layout_Header"] [class*="ContentCenter"]) {
+    padding-left: 12px;
+    padding-right: 12px;
+    border-right: none;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentRight"]),
+  main :global([class*="Layout_Header"] [class*="ContentRight"]) {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .header-center {
+    gap: 12px;
+  }
+
+  .header-divider-vertical {
+    margin: 0 8px;
+    height: 24px;
+  }
+
+  .header-content-right {
+    gap: 0;
+  }
+
+  .header-nav-developer {
+    padding-right: 12px;
+  }
+
+  /* Make debugger button icon-only on tablet */
+  .header-debug-button {
+    padding: 6px !important;
+    min-width: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Hide text in debugger button, keep only icon */
+  .debug-button-text {
+    display: none;
+  }
+
+  /* Adjust Connect Account spacing */
+  .connectAccount {
+    gap: 6px;
+  }
+}
+
+/* Small mobile adjustments */
+@media (max-width: 640px) {
+  main :global([class*="Layout_Header"]) {
+    min-height: 52px;
+  }
+
+  main :global([class*="Layout_Header"] > *) {
+    padding: 0 10px;
+    min-height: 52px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentCenter"]),
+  main :global([class*="Layout_Header"] [class*="ContentCenter"]) {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentRight"]),
+  main :global([class*="Layout_Header"] [class*="ContentRight"]) {
+    padding-left: 8px;
+    padding-right: 10px;
+  }
+
+  .header-center {
+    gap: 8px;
+  }
+
+  .header-content-right {
+    gap: 0;
+    justify-content: flex-end;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .header-nav-developer {
+    padding-right: 8px;
+  }
+
+  .header-divider-vertical {
+    display: none;
+  }
+}
+
+/* Very small mobile adjustments */
+@media (max-width: 480px) {
+  main :global([class*="Layout_Header"]) {
+    min-height: 48px;
+  }
+
+  main :global([class*="Layout_Header"] > *) {
+    padding: 0 8px;
+    min-height: 48px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentCenter"]),
+  main :global([class*="Layout_Header"] [class*="ContentCenter"]) {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentRight"]),
+  main :global([class*="Layout_Header"] [class*="ContentRight"]) {
+    padding-left: 6px;
+    padding-right: 8px;
+  }
+
+  .header-center {
+    gap: 6px;
+  }
+
+  .header-content-right {
+    gap: 0;
+    flex-wrap: nowrap;
+  }
+
+  .header-nav-developer {
+    padding-right: 6px;
+  }
+
+  /* Hide debugger button on very small screens or make it minimal */
+  .header-debug-button {
+    padding: 5px !important;
+    min-width: 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .header-debug-button :global(svg) {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* Make Connect Account more compact */
+  .connectAccount {
+    gap: 4px;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  main :global([class*="Layout_Header"]) {
+    min-height: 44px;
+  }
+
+  main :global([class*="Layout_Header"] > *) {
+    padding: 0 6px;
+    min-height: 44px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentCenter"]),
+  main :global([class*="Layout_Header"] [class*="ContentCenter"]) {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  main :global([class*="Layout_Header"] [class*="Header_ContentRight"]),
+  main :global([class*="Layout_Header"] [class*="ContentRight"]) {
+    padding-left: 4px;
+    padding-right: 6px;
+  }
+
+  .header-center {
+    gap: 4px;
+  }
+
+  .header-content-right {
+    gap: 0;
+  }
+
+  .header-nav-developer {
+    padding-right: 4px;
+  }
+}
+
+main :global([class*="Layout_Footer"]) {
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+main :global([class*="Layout_Footer"]) a {
+  color: var(--accent);
+}
+
+main :global([class*="Layout_Footer"]) a:hover {
+  color: #fbbf24;
+}
+
+/* Override Stellar Design System Card styles for dark theme */
+/* Target all possible Card class patterns - use very specific selectors */
+main :global(div[class*="Card"]),
+main :global(section[class*="Card"]),
+main :global(article[class*="Card"]),
+main :global([class*="Card_"]),
+main :global([class*="sds-Card"]),
+main :global([class^="Card"]),
+main :global([class*=" card"]) {
+  background-color: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f9fafb !important;
+}
+
+/* Force override for Cards regardless of inline styles or classes */
+main :global([class*="Card"]) {
+  background-color: #111827 !important;
+}
+
+/* More specific overrides for nested elements */
+main :global([class*="Card"] > *) {
+  color: inherit;
+}
+
+main :global([class*="Card"] [class*="Text"]) {
+  color: inherit;
+}
+
+/* Force text colors in Cards */
+main :global([class*="Card"] p:not([style*="color"])),
+main :global([class*="Card"] h1:not([style*="color"])),
+main :global([class*="Card"] h2:not([style*="color"])),
+main :global([class*="Card"] h3:not([style*="color"])),
+main :global([class*="Card"] h4:not([style*="color"])) {
+  color: #f9fafb !important;
+}
+
+/* Override Button styles for better dark theme integration */
+main :global([class*="Button"]) {
+  transition: all 0.2s ease;
+}
+
+/* Ensure artist cards have proper dark styling */
+main :global(.artist-card),
+main :global(.artist-card[class*="Card"]) {
+  background-color: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Override for buttons inside cards to ensure they work */
+main :global(.artist-card button) {
+  background-color: #fcd34d !important;
+  color: #030712 !important;
+}
+
+/* Responsive styles for artist cards */
+@media (max-width: 768px) {
+  main :global(.artist-card) {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 1rem !important;
+  }
+
+  main :global(.artist-card button) {
+    width: 100%;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Override Input styles for dark theme */
+main :global([class*="Input"]) {
+  background-color: #111827 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f9fafb !important;
+}
+
+main :global([class*="Input"] input) {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+}
+
+main :global([class*="Input"] input::placeholder) {
+  color: #9ca3af !important;
+}
+
+main :global([class*="Input"] input:focus) {
+  border-color: #fcd34d !important;
+}
+
+/* Override Modal styles for dark theme */
+main :global([class*="Modal"]) {
+  background-color: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #f9fafb !important;
+}
+
+main :global([class*="Modal"] [class*="Modal_Heading"]) {
+  color: #f9fafb !important;
+}
+
+main :global([class*="Modal"] [class*="Text"]) {
+  color: #d1d5db !important;
+}

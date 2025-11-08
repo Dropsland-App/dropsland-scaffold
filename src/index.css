@@ -1,2 +1,253 @@
 /* Import font for Stellar Design System */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Inconsolata:wght@500&display=swap");
+
+/* Dark Theme Variables */
+:root {
+  --bg-primary: #030712;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1f2937;
+  --accent: #fcd34d;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --border: rgba(255, 255, 255, 0.1);
+  --hover: rgba(255, 255, 255, 0.05);
+  --shadow: rgba(0, 0, 0, 0.3);
+  --transition: all 0.2s ease;
+}
+
+/* Global Dark Theme Styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Roboto",
+    "Oxygen",
+    "Ubuntu",
+    "Cantarell",
+    "Fira Sans",
+    "Droid Sans",
+    "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: var(--transition);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Link Styling */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+a:hover {
+  color: #fbbf24;
+  text-decoration: underline;
+}
+
+/* Selection Styling */
+::selection {
+  background-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+/* Focus Styles */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Code and Monospace Styling */
+code {
+  background-color: var(--bg-secondary);
+  color: var(--accent);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: "Inconsolata", monospace;
+}
+
+pre {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+  color: var(--text-primary);
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* Button Enhancements */
+button {
+  transition: var(--transition);
+}
+
+/* Card Enhancements */
+[class*="Card"] {
+  transition: var(--transition);
+}
+
+/* Input Enhancements */
+input,
+textarea,
+select {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Global overrides for Stellar Design System Card components */
+/* Use more specific selectors to override Stellar Design System defaults */
+/* Target all possible Card variations */
+div[class*="Card"],
+section[class*="Card"],
+article[class*="Card"],
+[class*="Card"] {
+  background-color: #111827 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f9fafb !important;
+}
+
+/* Force dark background on all Cards - highest priority */
+* [class*="Card"],
+* div[class*="Card"],
+* section[class*="Card"] {
+  background-color: #111827 !important;
+}
+
+/* Ensure borders are visible */
+[class*="Card"] {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Ensure Text components inside Cards have proper colors */
+[class*="Card"] [class*="Text"],
+[class*="Card"] p:not([style*="color"]),
+[class*="Card"] h1:not([style*="color"]),
+[class*="Card"] h2:not([style*="color"]),
+[class*="Card"] h3:not([style*="color"]),
+[class*="Card"] h4:not([style*="color"]) {
+  color: #f9fafb;
+}
+
+[class*="Card"] p[style*="color"] {
+  /* Keep inline color styles but ensure visibility */
+}
+
+/* Modal dark theme - Enhanced & Centered */
+[class*="Modal"] {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  margin: auto !important;
+  position: relative !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  z-index: 9999 !important;
+}
+
+[class*="Modal"] [class*="Modal_Content"],
+[class*="Modal"] [class*="Modal_Body"] {
+  background-color: transparent !important;
+  color: #f9fafb !important;
+}
+
+/* Modal Overlay/Backdrop - Centered */
+/* Target all possible overlay structures */
+[class*="Modal_Overlay"],
+[class*="Overlay"],
+[class*="ModalOverlay"],
+div[role="dialog"] ~ div,
+body > div[style*="position: fixed"],
+body > div[style*="z-index"]:has([class*="Modal"]) {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(3, 7, 18, 0.8) !important;
+  backdrop-filter: blur(8px);
+  z-index: 9998 !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+/* Ensure modals inside overlays are centered */
+[class*="Modal_Overlay"] > [class*="Modal"],
+[class*="Overlay"] > [class*="Modal"],
+div[role="dialog"] {
+  margin: 0 !important;
+  align-self: center !important;
+}
+
+[class*="Modal"] [class*="Modal_Heading"],
+[class*="Modal"] h1,
+[class*="Modal"] h2,
+[class*="Modal"] h3 {
+  color: #f9fafb !important;
+}
+
+[class*="Modal"] p,
+[class*="Modal"] [class*="Text"] {
+  color: #d1d5db !important;
+}

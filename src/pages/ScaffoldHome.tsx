@@ -1,88 +1,194 @@
-import React from "react";
-import { Code, Layout, Text } from "@stellar/design-system";
-import { GuessTheNumber } from "../components/GuessTheNumber";
+import React, { useState } from "react";
+import { Button, Layout, Text } from "@stellar/design-system";
+import { CreateTokenForm } from "../components/CreateTokenForm";
+import { useProfileType } from "../hooks/useProfileType";
+import { Box } from "../components/layout/Box";
 
-const Home: React.FC = () => (
-  <Layout.Content>
-    <Layout.Inset>
-      <Text as="h1" size="xl">
-        Welcome to your app!
-      </Text>
-      <Text as="p" size="md">
-        This is a basic template to get your dapp started with the Stellar
-        Design System and Stellar contracts. You can customize it further by
-        adding your own contracts, components, and styles.
-      </Text>
+const Home: React.FC = () => {
+  const { profileType } = useProfileType();
+  const [showCreateTokenForm, setShowCreateTokenForm] = useState(false);
 
-      <Text as="h2" size="lg">
-        Develop your contracts
-      </Text>
-      <Text as="p" size="md">
-        Take a look in the <Code size="md">contracts/</Code> directory. Compare
-        that to what you see in the <Code size="md">npm run dev</Code> output
-        (which itself is running <Code size="md">stellar scaffold watch</Code>).
-        Also compare it to what you see when you click{" "}
-        <Code size="md">&lt;/&gt; Debugger</Code> up in the top right. See?
-      </Text>
-      <Text as="p" size="md">
-        As you update your contracts,{" "}
-        <Code size="md">stellar scaffold watch</Code> command will automatically
-        recompile them and update the dapp with the latest changes.
-      </Text>
+  const handleCreateToken = (tokenName: string, symbol: string) => {
+    console.log("Creating token:", { tokenName, symbol });
+    // TODO: Implement token creation logic here
+    // This is where you would call your contract or API to create the token
+    // Example: await createTokenContract(tokenName, symbol);
+  };
 
-      <Text as="h2" size="lg">
-        Interact with contracts from the frontend
-      </Text>
-      <Text as="p" size="md">
-        Scaffold stellar automatically builds, deploys, and generates frontend
-        packages (sometimes called "TypeScript bindings") for each of your
-        contracts. You can adjust how it does this in the{" "}
-        <Code size="md">environments.toml</Code> file. Import these frontend
-        packages like this:
-      </Text>
-      <pre>
-        <Code size="md">import game from "./contracts/guess_the_number";</Code>
-      </pre>
-      <Text as="p" size="md">
-        If your contract emits events, check out the{" "}
-        <Code size="md">useSubscription</Code> hook in the{" "}
-        <Code size="md">hooks/</Code> folder to listen to them.
-      </Text>
-      <Text as="p" size="md">
-        As an example, here's the <Code size="md">GuessTheNumber</Code>{" "}
-        component. Make changes to the contract and the component and see how
-        things change!
-      </Text>
-      <Text as="h2" size="lg">
-        &lt;GuessTheNumber /&gt;
-      </Text>
-      <GuessTheNumber />
-      <Text as="h2" size="lg">
-        Interact with wallets
-      </Text>
-      <Text as="p" size="md">
-        This project is already integrated with Stellar Wallet Kit, and the{" "}
-        <Code size="md">useWallet</Code> hook is available for you to use in
-        your components. You can use it to connect to get connected account
-        information.
-      </Text>
-      <Text as="h2" size="lg">
-        Deploy your app
-      </Text>
-      <Text as="p" size="md">
-        To deploy your contracts, use the{" "}
-        <Code size="md">stellar registry publish</Code> and
-        <Code size="md">stellar registry deploy</Code> commands ( use{" "}
-        <Code size="md">stellar registry --help</Code> for more info ) to deploy
-        to the appropriate Stellar network.
-      </Text>
-      <Text as="p" size="md">
-        Build your frontend application code with{" "}
-        <Code size="md">npm run build</Code> and deploy the output in the
-        <Code size="md">dist/</Code> directory.
-      </Text>
-    </Layout.Inset>
-  </Layout.Content>
-);
+  return (
+    <Layout.Content>
+      <Layout.Inset>
+        {/* Hero Section */}
+        <Box gap="lg" style={{ marginBottom: "3rem", padding: "2rem 0" }}>
+          <Text
+            as="h1"
+            size="xl"
+            style={{
+              marginBottom: "1rem",
+              color: "#f9fafb",
+              fontWeight: "700",
+            }}
+          >
+            Welcome to Dropsland
+          </Text>
+          <Text
+            as="p"
+            size="lg"
+            style={{
+              marginBottom: "1rem",
+              color: "#fcd34d",
+              fontWeight: "600",
+            }}
+          >
+            Where Music Meets Ownership
+          </Text>
+          <Text
+            as="p"
+            size="md"
+            style={{
+              marginBottom: "1rem",
+              maxWidth: "800px",
+              color: "#d1d5db",
+              lineHeight: "1.6",
+            }}
+          >
+            Dropsland is a Web3 platform where DJs can create their own token
+            and share it with their community. Fans can collect exclusive NFTs
+            that unlock perks like early track access, private events, and
+            special content. Artists can upload their music directly, bypassing
+            intermediaries and connecting authentically with their audience.
+          </Text>
+          <Text
+            as="p"
+            size="md"
+            style={{ maxWidth: "800px", color: "#d1d5db", lineHeight: "1.6" }}
+          >
+            Everything runs on a transparent, decentralized, and global
+            blockchain infrastructure. Dropsland redefines how electronic music
+            is shared, supported, and experienced.
+          </Text>
+        </Box>
+
+        {profileType === "DJ" ? (
+          /* DJ Dashboard */
+          <Box gap="lg">
+            <Box gap="md" style={{ marginBottom: "2rem" }}>
+              <Text
+                as="h2"
+                size="lg"
+                style={{ color: "#f9fafb", fontWeight: "600" }}
+              >
+                DJ Dashboard
+              </Text>
+              <Text
+                as="p"
+                size="md"
+                style={{ color: "#d1d5db", maxWidth: "600px" }}
+              >
+                Create your own token and build your community. Share exclusive
+                content, offer special perks, and connect directly with your
+                fans.
+              </Text>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => setShowCreateTokenForm(true)}
+                style={{ alignSelf: "flex-start", marginTop: "0.5rem" }}
+              >
+                Create Your Token
+              </Button>
+            </Box>
+          </Box>
+        ) : (
+          /* Fan View */
+          <Box gap="lg">
+            <Box gap="md">
+              <Text
+                as="h2"
+                size="lg"
+                style={{ color: "#f9fafb", fontWeight: "600" }}
+              >
+                Discover Artists
+              </Text>
+              <Text
+                as="p"
+                size="md"
+                style={{ color: "#d1d5db", maxWidth: "600px" }}
+              >
+                Explore the Dropsland community. Collect exclusive NFTs, support
+                your favorite DJs, and unlock special perks.
+              </Text>
+            </Box>
+            <Box
+              gap="md"
+              style={{
+                marginTop: "2rem",
+                padding: "1.5rem",
+                backgroundColor: "#111827",
+                border: "1px solid rgba(252, 211, 77, 0.2)",
+                borderRadius: "12px",
+              }}
+            >
+              <Text
+                as="h3"
+                size="md"
+                style={{
+                  color: "#fcd34d",
+                  fontWeight: "600",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Why Dropsland?
+              </Text>
+              <Box gap="sm">
+                <Text
+                  as="p"
+                  size="sm"
+                  style={{ color: "#d1d5db", lineHeight: "1.6" }}
+                >
+                  •{" "}
+                  <strong style={{ color: "#f9fafb" }}>
+                    Direct Connection:
+                  </strong>{" "}
+                  Connect directly with artists, no intermediaries
+                </Text>
+                <Text
+                  as="p"
+                  size="sm"
+                  style={{ color: "#d1d5db", lineHeight: "1.6" }}
+                >
+                  •{" "}
+                  <strong style={{ color: "#f9fafb" }}>Exclusive Perks:</strong>{" "}
+                  Unlock early access, private events, and special content
+                </Text>
+                <Text
+                  as="p"
+                  size="sm"
+                  style={{ color: "#d1d5db", lineHeight: "1.6" }}
+                >
+                  • <strong style={{ color: "#f9fafb" }}>Ownership:</strong> Own
+                  your NFTs and tokens on the blockchain
+                </Text>
+                <Text
+                  as="p"
+                  size="sm"
+                  style={{ color: "#d1d5db", lineHeight: "1.6" }}
+                >
+                  • <strong style={{ color: "#f9fafb" }}>Transparency:</strong>{" "}
+                  Built on decentralized, transparent blockchain infrastructure
+                </Text>
+              </Box>
+            </Box>
+          </Box>
+        )}
+      </Layout.Inset>
+      <CreateTokenForm
+        visible={showCreateTokenForm}
+        onClose={() => setShowCreateTokenForm(false)}
+        onSubmit={handleCreateToken}
+      />
+    </Layout.Content>
+  );
+};
 
 export default Home;
