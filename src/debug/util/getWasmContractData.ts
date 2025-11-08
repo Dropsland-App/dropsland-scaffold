@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as StellarXdr from "./StellarXdr";
 import { prettifyJsonString } from "./prettifyJsonString";
@@ -12,7 +9,10 @@ import {
 
 export const getWasmContractData = async (wasmBytes: Buffer) => {
   try {
-    const mod = await WebAssembly.compile(wasmBytes);
+    // Convert Buffer to ArrayBuffer for WebAssembly.compile
+    // Create a new ArrayBuffer copy to avoid SharedArrayBuffer issues
+    const wasmArrayBuffer = new Uint8Array(wasmBytes).buffer;
+    const mod = await WebAssembly.compile(wasmArrayBuffer);
 
     const result: Record<ContractSectionName, ContractData> = {
       contractmetav0: {},

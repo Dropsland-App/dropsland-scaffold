@@ -1,0 +1,71 @@
+.networkPill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: "Inter", sans-serif;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .networkPill {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .networkPill :global(svg) {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .networkPill {
+    padding: 4px 6px;
+    font-size: 10px;
+    gap: 3px;
+  }
+
+  /* Hide network text on very small screens, show only icon */
+  .networkText {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .networkPill {
+    padding: 3px 5px;
+  }
+}
+
+.networkPill.success {
+  background-color: rgba(46, 208, 110, 0.15);
+  color: #2ed06e;
+  border-color: rgba(46, 208, 110, 0.3);
+}
+
+.networkPill.error {
+  background-color: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+  border-color: rgba(255, 59, 48, 0.3);
+  cursor: help;
+}
+
+.networkPill.neutral {
+  background-color: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  border-color: var(--border);
+}
+
+.networkText {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}

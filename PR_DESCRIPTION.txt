@@ -1,0 +1,31 @@
+PR Title:
+feat: Add navigation system, core pages, and token management features
+
+PR Description:
+This PR introduces a complete navigation system and core application pages with token management functionality.
+
+## New Features
+- **Pages Added:**
+  - Profile page with type selector
+  - Activity page
+  - Wallet page
+  - Explore page with token buying functionality
+  
+- **Components Added:**
+  - Bottom navigation component
+  - Header logo component
+  - Profile type selector component
+  - Create token form component
+  
+- **Navigation & Routing:**
+  - Integrated routing and navigation in app layout
+  - Profile type management system
+
+## Styling & Configuration
+- Added CSS modules for existing components
+- Updated app layout and global styles
+- Updated dependencies and configuration
+
+## Bug Fixes & Cleanup
+- Fixed several build errors
+- Removed unused contracts

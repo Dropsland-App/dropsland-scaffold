@@ -1,0 +1,76 @@
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  padding: 4px 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.logoLink:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.logoImage {
+  width: 150px;
+  height: 50px;
+  object-fit: contain;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.logoLink:hover .logoImage {
+  transform: scale(1.1);
+}
+
+.logoText {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: "Inter", sans-serif;
+  letter-spacing: -0.5px;
+  color: inherit;
+}
+
+/* Tablet adjustments */
+@media (max-width: 768px) {
+  .logoImage {
+    width: 120px;
+    height: 40px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 640px) {
+  .logoImage {
+    width: 110px;
+    height: 36px;
+  }
+
+  .logoLink {
+    padding: 2px 0;
+  }
+}
+
+/* Very small mobile */
+@media (max-width: 480px) {
+  .logoImage {
+    width: 95px;
+    height: 30px;
+  }
+
+  .logoLink {
+    padding: 0;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .logoImage {
+    width: 85px;
+    height: 28px;
+  }
+}

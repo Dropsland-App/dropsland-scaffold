@@ -117,15 +117,14 @@ export const renderOneOf = ({
         {/* title is the tag */}
         <option value="">Select</option>
 
-        {schema.oneOf.map((oneOf, index) => {
+        {schema.oneOf.map((oneOf) => {
           if (typeof oneOf === "boolean") return null;
 
+          // Use title as key since it should be unique, fallback to JSON string if needed
+          const key = oneOf?.title || JSON.stringify(oneOf);
+
           return (
-            <option
-              id={oneOf?.title}
-              value={oneOf?.title}
-              key={`${oneOf?.title}-${index}`}
-            >
+            <option id={oneOf?.title} value={oneOf?.title} key={key}>
               {oneOf?.title}
             </option>
           );

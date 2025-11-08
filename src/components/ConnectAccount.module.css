@@ -1,0 +1,58 @@
+.connectAccount {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  vertical-align: middle;
+  flex-wrap: nowrap;
+}
+
+/* Tablet adjustments */
+@media (max-width: 768px) {
+  .connectAccount {
+    gap: 6px;
+  }
+}
+
+/* Small mobile - hide wallet balance text */
+@media (max-width: 640px) {
+  .connectAccount {
+    gap: 4px;
+  }
+
+  /* Hide wallet balance text on small screens */
+  .connectAccount :global(.wallet-balance-text),
+  .connectAccount :global([class*="Text"]) {
+    display: none !important;
+  }
+
+  /* Ensure wallet button container doesn't break */
+  .connectAccount :global(.wallet-button-container) {
+    gap: 0;
+  }
+}
+
+/* Very small mobile */
+@media (max-width: 480px) {
+  .connectAccount {
+    gap: 4px;
+  }
+
+  /* Make buttons smaller */
+  .connectAccount :global(button) {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .connectAccount {
+    gap: 3px;
+  }
+
+  .connectAccount :global(button) {
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+  }
+}

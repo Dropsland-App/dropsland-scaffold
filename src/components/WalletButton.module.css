@@ -1,0 +1,17 @@
+.walletButtonContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+}
+
+.walletBalanceText {
+  white-space: nowrap;
+}
+
+/* Hide wallet balance on mobile */
+@media (max-width: 640px) {
+  .walletBalanceText {
+    display: none;
+  }
+}

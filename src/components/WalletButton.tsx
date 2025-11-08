@@ -3,6 +3,7 @@ import { Button, Text, Modal, Profile } from "@stellar/design-system";
 import { useWallet } from "../hooks/useWallet";
 import { useWalletBalance } from "../hooks/useWalletBalance";
 import { connectWallet, disconnectWallet } from "../util/wallet";
+import "./WalletButton.module.css";
 
 export const WalletButton = () => {
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
@@ -12,7 +13,12 @@ export const WalletButton = () => {
 
   if (!address) {
     return (
-      <Button variant="primary" size="md" onClick={() => void connectWallet()}>
+      <Button
+        variant="primary"
+        size="md"
+        onClick={() => void connectWallet()}
+        className="wallet-connect-button"
+      >
         {buttonLabel}
       </Button>
     );
@@ -20,6 +26,7 @@ export const WalletButton = () => {
 
   return (
     <div
+      className="wallet-button-container"
       style={{
         display: "flex",
         flexDirection: "row",
@@ -28,7 +35,7 @@ export const WalletButton = () => {
         opacity: balance.isLoading ? 0.6 : 1,
       }}
     >
-      <Text as="div" size="sm">
+      <Text as="div" size="sm" className="wallet-balance-text">
         Wallet Balance: {xlm} XLM
       </Text>
 

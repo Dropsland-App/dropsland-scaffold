@@ -64,7 +64,6 @@ export function useSubscription(
           limit: 10,
         });
 
-        paging[id].pagingToken = undefined;
         if (response.latestLedger) {
           paging[id].lastLedgerStart = response.latestLedger;
         }
@@ -77,10 +76,11 @@ export function useSubscription(
                 "Poll Events: subscription callback had error: ",
                 error,
               );
-            } finally {
-              paging[id].pagingToken = event.pagingToken;
             }
           });
+          // Clear pagingToken after processing events to start from latestLedger on next poll
+          // This ensures we don't miss any events while polling
+          paging[id].pagingToken = undefined;
         }
       } catch (error) {
         console.error("Poll Events: error: ", error);
