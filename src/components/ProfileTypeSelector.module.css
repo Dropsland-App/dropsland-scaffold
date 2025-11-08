@@ -1,0 +1,92 @@
+.selector {
+  display: inline-flex;
+  align-items: stretch;
+  background-color: rgba(31, 41, 55, 0.8);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.option {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  z-index: 1;
+  min-width: 54px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .selector {
+    padding: 2px;
+    gap: 2px;
+    border-radius: 6px;
+  }
+
+  .option {
+    padding: 6px 14px;
+    font-size: 12px;
+    min-width: 48px;
+    border-radius: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .selector {
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .option {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  .option {
+    padding: 5px 10px;
+    font-size: 10px;
+    min-width: 40px;
+  }
+}
+
+.option:hover:not(.active) {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.option.active {
+  background-color: var(--accent);
+  color: #0f172a;
+  font-weight: 600;
+  box-shadow:
+    0 1px 3px rgba(252, 211, 77, 0.4),
+    0 0 0 1px rgba(252, 211, 77, 0.2);
+}
+
+.option.active:hover {
+  background-color: #fde047;
+  box-shadow:
+    0 2px 4px rgba(252, 211, 77, 0.5),
+    0 0 0 1px rgba(252, 211, 77, 0.3);
+}
