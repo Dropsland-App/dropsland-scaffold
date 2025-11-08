@@ -197,12 +197,14 @@ const Activity: React.FC = () => {
                     <Card>
                       <Box gap="sm" direction="row" align="start">
                         <Box
+                          gap="sm"
                           style={{ marginTop: "0.25rem", fontSize: "1.5rem" }}
                         >
                           {getActivityIcon(activity.type)}
                         </Box>
                         <Box gap="xs" style={{ flex: 1 }}>
                           <Box
+                            gap="sm"
                             direction="row"
                             justify="space-between"
                             align="center"
