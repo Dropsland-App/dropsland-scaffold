@@ -5,21 +5,30 @@ interface CreateTokenFormProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (tokenName: string, symbol: string) => void | Promise<void>;
+  isSubmitting?: boolean;
+  error?: string | null;
+  success?: { tokenAddress: string; transactionHash: string } | null;
 }
 
 export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
   visible,
   onClose,
   onSubmit,
+  isSubmitting: externalIsSubmitting = false,
+  error: externalError = null,
+  success: externalSuccess = null,
 }) => {
   const [tokenName, setTokenName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Use external submitting state if provided, otherwise use internal state
+  const isSubmittingFinal = externalIsSubmitting || isSubmitting;
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && visible && !isSubmitting) {
+      if (e.key === "Escape" && visible && !isSubmittingFinal) {
         onClose();
       }
     };
@@ -33,7 +42,16 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       document.removeEventListener("keydown", handleEscape);
       document.body.style.overflow = "";
     };
-  }, [visible, isSubmitting, onClose]);
+  }, [visible, isSubmittingFinal, onClose]);
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!visible) {
+      setTokenName("");
+      setSymbol("");
+      setIsSubmitting(false);
+    }
+  }, [visible]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,24 +60,33 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       return;
     }
 
-    setIsSubmitting(true);
+    // If external submitting state is provided, don't manage internal state
+    if (!externalIsSubmitting) {
+      setIsSubmitting(true);
+    }
+
     try {
       const result = onSubmit(tokenName.trim(), symbol.trim().toUpperCase());
       if (result instanceof Promise) {
         await result;
       }
-      setTokenName("");
-      setSymbol("");
-      onClose();
+      // Only close if not using external state management
+      if (!externalIsSubmitting && !externalError && !externalSuccess) {
+        setTokenName("");
+        setSymbol("");
+        onClose();
+      }
     } catch (error) {
       console.error("Error creating token:", error);
     } finally {
-      setIsSubmitting(false);
+      if (!externalIsSubmitting) {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isSubmittingFinal) {
       setTokenName("");
       setSymbol("");
       onClose();
@@ -67,7 +94,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
   };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget && !isSubmitting) {
+    if (e.target === e.currentTarget && !isSubmittingFinal) {
       handleClose();
     }
   };
@@ -93,7 +120,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
           <button
             type="button"
             onClick={handleClose}
-            disabled={isSubmitting}
+            disabled={isSubmittingFinal}
             className="modal-close-button"
             aria-label="Close modal"
           >
@@ -137,7 +164,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                   value={tokenName}
                   onChange={(e) => setTokenName(e.target.value)}
                   placeholder="e.g., My Music Token"
-                  disabled={isSubmitting}
+                  disabled={isSubmittingFinal}
                   required
                   className="input-field"
                 />
@@ -153,7 +180,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                   placeholder="e.g., MMT"
-                  disabled={isSubmitting}
+                  disabled={isSubmittingFinal}
                   required
                   maxLength={10}
                   className="input-field"
@@ -169,6 +196,62 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                 </p>
               </div>
             )}
+
+            {/* Error Message */}
+            {externalError && (
+              <div
+                style={{
+                  marginTop: "1rem",
+                  padding: "0.75rem",
+                  backgroundColor: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  borderRadius: "8px",
+                  color: "#fca5a5",
+                }}
+              >
+                <p style={{ margin: 0, fontSize: "0.875rem" }}>
+                  {externalError}
+                </p>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {externalSuccess && (
+              <div
+                style={{
+                  marginTop: "1rem",
+                  padding: "0.75rem",
+                  backgroundColor: "rgba(34, 197, 94, 0.1)",
+                  border: "1px solid rgba(34, 197, 94, 0.3)",
+                  borderRadius: "8px",
+                  color: "#86efac",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "0.875rem",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Token created successfully!
+                </p>
+                <p style={{ margin: 0, fontSize: "0.75rem", opacity: 0.8 }}>
+                  Address: {externalSuccess.tokenAddress.slice(0, 8)}...
+                  {externalSuccess.tokenAddress.slice(-8)}
+                </p>
+                <p
+                  style={{
+                    margin: "0.25rem 0 0 0",
+                    fontSize: "0.75rem",
+                    opacity: 0.8,
+                  }}
+                >
+                  Transaction: {externalSuccess.transactionHash.slice(0, 8)}...
+                  {externalSuccess.transactionHash.slice(-8)}
+                </p>
+              </div>
+            )}
           </form>
         </div>
 
@@ -177,15 +260,15 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
           <button
             type="submit"
             form="createTokenForm"
-            disabled={!tokenName.trim() || !symbol.trim() || isSubmitting}
+            disabled={!tokenName.trim() || !symbol.trim() || isSubmittingFinal}
             className="modal-button-primary"
           >
-            {isSubmitting ? "Creating..." : "Create Token"}
+            {isSubmittingFinal ? "Creating..." : "Create Token"}
           </button>
           <button
             type="button"
             onClick={handleClose}
-            disabled={isSubmitting}
+            disabled={isSubmittingFinal}
             className="modal-button-secondary"
           >
             Cancel

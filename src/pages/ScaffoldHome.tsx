@@ -2,17 +2,63 @@ import React, { useState } from "react";
 import { Button, Layout, Text } from "@stellar/design-system";
 import { CreateTokenForm } from "../components/CreateTokenForm";
 import { useProfileType } from "../hooks/useProfileType";
+import { useWallet } from "../hooks/useWallet";
 import { Box } from "../components/layout/Box";
+import { createToken } from "../util/createToken";
 
 const Home: React.FC = () => {
   const { profileType } = useProfileType();
+  const { address, signTransaction } = useWallet();
   const [showCreateTokenForm, setShowCreateTokenForm] = useState(false);
+  const [isCreatingToken, setIsCreatingToken] = useState(false);
+  const [tokenCreationError, setTokenCreationError] = useState<string | null>(
+    null,
+  );
+  const [tokenCreationSuccess, setTokenCreationSuccess] = useState<{
+    tokenAddress: string;
+    transactionHash: string;
+  } | null>(null);
 
-  const handleCreateToken = (tokenName: string, symbol: string) => {
-    console.log("Creating token:", { tokenName, symbol });
-    // TODO: Implement token creation logic here
-    // This is where you would call your contract or API to create the token
-    // Example: await createTokenContract(tokenName, symbol);
+  const handleCreateToken = async (tokenName: string, symbol: string) => {
+    if (!address) {
+      setTokenCreationError("Please connect your wallet first");
+      return;
+    }
+
+    if (!signTransaction) {
+      setTokenCreationError("Wallet signing is not available");
+      return;
+    }
+
+    setIsCreatingToken(true);
+    setTokenCreationError(null);
+    setTokenCreationSuccess(null);
+
+    try {
+      const result = await createToken({
+        owner: address,
+        name: tokenName,
+        symbol: symbol,
+        decimals: 7,
+        signTransaction,
+      });
+
+      setTokenCreationSuccess(result);
+      console.log("Token created successfully:", result);
+
+      // Close the form after a short delay to show success
+      setTimeout(() => {
+        setShowCreateTokenForm(false);
+        setTokenCreationSuccess(null);
+      }, 2000);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create token";
+      setTokenCreationError(errorMessage);
+      console.error("Error creating token:", error);
+    } finally {
+      setIsCreatingToken(false);
+    }
   };
 
   return (
@@ -184,8 +230,15 @@ const Home: React.FC = () => {
       </Layout.Inset>
       <CreateTokenForm
         visible={showCreateTokenForm}
-        onClose={() => setShowCreateTokenForm(false)}
+        onClose={() => {
+          setShowCreateTokenForm(false);
+          setTokenCreationError(null);
+          setTokenCreationSuccess(null);
+        }}
         onSubmit={handleCreateToken}
+        isSubmitting={isCreatingToken}
+        error={tokenCreationError}
+        success={tokenCreationSuccess}
       />
     </Layout.Content>
   );
