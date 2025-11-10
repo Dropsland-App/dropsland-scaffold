@@ -18,7 +18,6 @@ import { connectWallet } from "../util/wallet";
 import { useTokenCreation } from "../hooks/useTokenCreation";
 import type { TokenCreationFormData } from "../types/tokenCreation";
 import { stellarNetwork } from "../contracts/util";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface CreateTokenFormProps {
   visible: boolean;
@@ -189,7 +188,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
             >
               {walletPending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   Connecting...
                 </>
               ) : (
@@ -330,7 +329,9 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       case 3:
         return (
           <div className="space-y-4 text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+            <div className="h-12 w-12 mx-auto text-primary flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent"></div>
+            </div>
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Preparing Your Token</h3>
               <p className="text-sm text-muted-foreground">
@@ -355,7 +356,9 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       case 4:
         return (
           <div className="space-y-4 text-center">
-            <CheckCircle2 className="h-12 w-12 mx-auto text-green-500" />
+            <div className="h-12 w-12 mx-auto text-green-500 flex items-center justify-center">
+              <div className="text-4xl">✓</div>
+            </div>
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Trustline Created</h3>
               <p className="text-sm text-muted-foreground">
@@ -388,7 +391,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
             >
               {state.loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   Signing...
                 </>
               ) : (
@@ -401,7 +404,9 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       case 5:
         return (
           <div className="space-y-4 text-center">
-            <CheckCircle2 className="h-12 w-12 mx-auto text-green-500" />
+            <div className="h-12 w-12 mx-auto text-green-500 flex items-center justify-center">
+              <div className="text-4xl">✓</div>
+            </div>
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Tokens Emitted Successfully</h3>
               <p className="text-sm text-muted-foreground">
@@ -429,7 +434,6 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
               </Card>
             )}
             <Alert>
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-left">
                 <strong>Next step:</strong> Distribution will send the platform
                 fee to the treasury. Your share will remain in the distribution
@@ -447,7 +451,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
             >
               {state.loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   Distributing...
                 </>
               ) : (
@@ -460,7 +464,9 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       case 6:
         return (
           <div className="space-y-4 text-center">
-            <CheckCircle2 className="h-12 w-12 mx-auto text-green-500" />
+            <div className="h-12 w-12 mx-auto text-green-500 flex items-center justify-center">
+              <div className="text-4xl">✓</div>
+            </div>
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Distribution Complete</h3>
               <p className="text-sm text-muted-foreground">
@@ -543,7 +549,9 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       case 7:
         return (
           <div className="space-y-4 text-center">
-            <CheckCircle2 className="h-16 w-16 mx-auto text-green-500" />
+            <div className="h-16 w-16 mx-auto text-green-500 flex items-center justify-center">
+              <div className="text-5xl">✓</div>
+            </div>
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Token Created Successfully!</h3>
               <p className="text-sm text-muted-foreground">
@@ -676,7 +684,6 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
         {/* Error Message */}
         {state.error && (
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
             <AlertDescription>{state.error}</AlertDescription>
           </Alert>
         )}
@@ -699,7 +706,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
             >
               {state.loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   Creating...
                 </>
               ) : (
