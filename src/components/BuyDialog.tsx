@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button.tsx";
 import { Input } from "./ui/input.tsx";
 import { Label } from "./ui/label.tsx";
@@ -10,32 +10,42 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog.tsx";
-import { CheckCircle2 } from "lucide-react";
+import { Alert, AlertDescription } from "./ui/alert.tsx";
+import { Card, CardContent } from "./ui/card.tsx";
+import { useBuyToken } from "../hooks/useBuyToken";
+import { useWallet } from "../hooks/useWallet";
 
 interface BuyDialogProps {
   visible: boolean;
   onClose: () => void;
   tokenSymbol: string;
-  onConfirm: (amount: number) => Promise<void> | void;
+  tokenIssuer: string;
 }
 
 export const BuyDialog: React.FC<BuyDialogProps> = ({
   visible,
   onClose,
   tokenSymbol,
-  onConfirm,
+  tokenIssuer,
 }) => {
-  const [inputType, setInputType] = useState<"usdc" | "tokens">("usdc");
+  const { address } = useWallet();
+  const {
+    buyToken,
+    loading: buyLoading,
+    error: buyError,
+    checkingTrustline,
+  } = useBuyToken();
+  const [inputType, setInputType] = useState<"xlm" | "tokens">("xlm");
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [rate, setRate] = useState(0.5);
+  const rate = 1.0; // Fixed rate: 1 XLM = 1 token (1:1)
   const [purchasedAmounts, setPurchasedAmounts] = useState<{
-    usdc: number;
+    xlm: number;
     tokens: number;
   } | null>(null);
-  const [rateUpdating, setRateUpdating] = useState(false);
+  const [transactionUrl, setTransactionUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible) {
@@ -43,40 +53,35 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
       setIsSubmitting(false);
       setIsSuccess(false);
       setError("");
-      setInputType("usdc");
+      setInputType("xlm");
       setPurchasedAmounts(null);
-      setRateUpdating(false);
+      setTransactionUrl(null);
     }
   }, [visible]);
 
+  // Update error from buy hook
   useEffect(() => {
-    if (!visible || isSubmitting || isSuccess) return;
+    if (buyError) {
+      setError(buyError);
+    }
+  }, [buyError]);
 
-    const interval = setInterval(() => {
-      const change = (Math.random() - 0.5) * 0.1;
-      setRateUpdating(true);
-      setRate((prevRate) => {
-        const newRate = prevRate + change;
-        return Math.max(0.1, Math.min(2.0, newRate));
-      });
-      setTimeout(() => setRateUpdating(false), 500);
-    }, 3000);
+  // Calculate converted amounts (1:1 rate)
+  const calculateXlmAmount = (tokenAmount: number): number => {
+    return tokenAmount / rate; // 1 token = 1 XLM
+  };
 
-    return () => clearInterval(interval);
-  }, [visible, isSubmitting, isSuccess]);
+  const calculateTokenAmount = (xlmAmount: number): number => {
+    return xlmAmount * rate; // 1 XLM = 1 token
+  };
 
-  const calculateUsdcAmount = (tokenAmount: number): number =>
-    tokenAmount / rate;
-  const calculateTokenAmount = (usdcAmount: number): number =>
-    usdcAmount * rate;
-
-  const usdcAmount =
-    inputType === "usdc"
+  const xlmAmount =
+    inputType === "xlm"
       ? amount && !isNaN(parseFloat(amount))
         ? parseFloat(amount)
         : 0
       : amount && !isNaN(parseFloat(amount))
-        ? calculateUsdcAmount(parseFloat(amount))
+        ? calculateXlmAmount(parseFloat(amount))
         : 0;
 
   const tokenAmount =
@@ -92,6 +97,20 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
     e.preventDefault();
     setError("");
 
+    // Validate wallet connection
+    if (!address) {
+      setError("Please connect your wallet first");
+      console.error("Wallet not connected");
+      return;
+    }
+
+    // Validate token issuer
+    if (!tokenIssuer) {
+      setError("Token issuer is required");
+      console.error("Token issuer not provided");
+      return;
+    }
+
     const amountNum = parseFloat(amount);
     if (!amount || isNaN(amountNum) || amountNum <= 0) {
       setError("Please enter a valid amount");
@@ -99,19 +118,53 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
     }
 
     setIsSubmitting(true);
+    setError("");
+
     try {
-      const finalUsdcAmount =
-        inputType === "usdc" ? amountNum : calculateUsdcAmount(amountNum);
-      const result = onConfirm(finalUsdcAmount);
-      if (result instanceof Promise) {
-        await result;
+      // Calculate XLM amount to spend
+      const xlmToSpend =
+        inputType === "xlm" ? amountNum : calculateXlmAmount(amountNum);
+      const tokensToReceive =
+        inputType === "tokens" ? amountNum : calculateTokenAmount(amountNum);
+
+      console.log("=== Starting Token Purchase ===");
+      console.log("Token:", tokenSymbol);
+      console.log("Issuer:", tokenIssuer);
+      console.log("Buyer:", address);
+      console.log("Amount XLM:", xlmToSpend);
+      console.log("Expected tokens:", tokensToReceive);
+
+      // Always use the buy token hook when tokenIssuer is provided
+      // This will trigger wallet signing - the wallet should open automatically
+      console.log("=== BuyDialog: Calling buyToken hook ===");
+      console.log("This will open your wallet to sign the transaction");
+      console.log(
+        "If the wallet does not open, check the browser console for errors",
+      );
+
+      try {
+        const result = await buyToken({
+          tokenCode: tokenSymbol,
+          tokenIssuer: tokenIssuer,
+          amountXlm: xlmToSpend.toFixed(7),
+          buyerPublicKey: address,
+        });
+
+        console.log("✅ Purchase successful!");
+        console.log("Transaction hash:", result.txHash);
+        console.log("Transaction URL:", result.transactionUrl);
+
+        setTransactionUrl(result.transactionUrl);
+      } catch (buyError) {
+        // Re-throw to be caught by outer try-catch
+        console.error("BuyDialog: Error in buyToken hook:", buyError);
+        throw buyError;
       }
 
-      const finalTokenAmount =
-        inputType === "tokens" ? amountNum : calculateTokenAmount(amountNum);
+      // Store purchased amounts for success message
       setPurchasedAmounts({
-        usdc: finalUsdcAmount,
-        tokens: finalTokenAmount,
+        xlm: xlmToSpend,
+        tokens: tokensToReceive,
       });
 
       setIsSuccess(true);
@@ -121,16 +174,29 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
         setIsSuccess(false);
         setIsSubmitting(false);
         setPurchasedAmounts(null);
+        setTransactionUrl(null);
         onClose();
-      }, 2000);
-    } catch (err) {
-      console.error("Error purchasing token:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Purchase failed. Please try again.",
-      );
+      }, 3000);
+    } catch (error) {
+      console.error("❌ Error purchasing token:", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Purchase failed. Please try again.";
+
+      setError(errorMessage);
       setIsSubmitting(false);
+      // Note: checkingTrustline is managed by useBuyToken hook, not here
+
+      // Don't show success if there was an error
+      setIsSuccess(false);
+      setPurchasedAmounts(null);
     }
   };
 
@@ -145,180 +211,231 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
   return (
     <Dialog
       open={visible}
-      onOpenChange={(open) => {
+      onOpenChange={(open: boolean) => {
         if (!open) {
           handleClose();
         }
       }}
     >
-      {visible && (
-        <DialogContent className="sm:max-w-xl">
-          {isSuccess ? (
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="rounded-full bg-emerald-500/10 p-4 text-emerald-400">
-                <CheckCircle2 className="size-12" />
-              </div>
+      <DialogContent className="sm:max-w-xl">
+        {isSuccess ? (
+          <div className="flex flex-col items-center gap-4 text-center py-4">
+            <div className="rounded-full bg-emerald-500/10 p-4 text-emerald-400">
+              <div className="text-4xl">✓</div>
+            </div>
+            <div className="space-y-2">
               <h3 className="text-xl font-semibold text-foreground">
                 Purchase successful!
               </h3>
               <p className="text-sm text-muted-foreground">
                 You've purchased{" "}
                 {purchasedAmounts
-                  ? purchasedAmounts.tokens.toFixed(4)
-                  : "0.0000"}{" "}
-                {tokenSymbol} for{" "}
-                {purchasedAmounts ? purchasedAmounts.usdc.toFixed(2) : "0.00"}{" "}
-                USDC
+                  ? purchasedAmounts.tokens.toFixed(7)
+                  : "0.0000000"}{" "}
+                {tokenSymbol}
               </p>
+              <p className="text-sm text-muted-foreground">
+                Paid{" "}
+                {purchasedAmounts
+                  ? purchasedAmounts.xlm.toFixed(7)
+                  : "0.0000000"}{" "}
+                XLM
+              </p>
+              {transactionUrl && (
+                <a
+                  href={transactionUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary hover:underline block mt-2"
+                >
+                  View on Stellar Explorer
+                </a>
+              )}
             </div>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle>Buy {tokenSymbol}</DialogTitle>
-                <DialogDescription>
-                  Use USDC to acquire {tokenSymbol} at the live market rate.
-                </DialogDescription>
-              </DialogHeader>
+          </div>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Buy {tokenSymbol}</DialogTitle>
+              <DialogDescription>
+                Use XLM to acquire {tokenSymbol} at a fixed 1:1 exchange rate.
+              </DialogDescription>
+            </DialogHeader>
 
-              <form
-                id="buyTokenForm"
-                className="space-y-6"
-                onSubmit={(e) => {
-                  void handleSubmit(e);
-                }}
-              >
-                <div className="rounded-xl border border-border/50 bg-muted/10 p-4 text-center">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <form
+              id="buyTokenForm"
+              className="space-y-6"
+              onSubmit={(e) => {
+                void handleSubmit(e);
+              }}
+            >
+              {/* Rate Display */}
+              <Card>
+                <CardContent className="pt-6 text-center">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
                     Current rate
                   </p>
-                  <p
-                    className={`text-3xl font-semibold text-amber-300 transition-all duration-300 ${rateUpdating ? "scale-105" : ""}`}
-                  >
-                    {rate.toFixed(4)} {tokenSymbol}
+                  <p className="text-3xl font-semibold text-amber-300">
+                    1 XLM = 1 {tokenSymbol}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    1 USDC = {rate.toFixed(4)} {tokenSymbol}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Fixed 1:1 exchange rate
                   </p>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div className="inline-flex w-full rounded-md border border-border/60 bg-background p-1 text-xs font-semibold text-muted-foreground">
-                  <button
-                    type="button"
-                    className={`flex-1 rounded-md px-3 py-2 transition ${inputType === "usdc" ? "bg-foreground text-background" : "hover:text-foreground"}`}
-                    onClick={() => {
-                      setInputType("usdc");
-                      setAmount("");
+              {/* Input Type Toggle */}
+              <div className="inline-flex w-full rounded-md border border-border/60 bg-background p-1 text-xs font-semibold text-muted-foreground">
+                <button
+                  type="button"
+                  className={`flex-1 rounded-md px-3 py-2 transition ${
+                    inputType === "xlm"
+                      ? "bg-foreground text-background"
+                      : "hover:text-foreground"
+                  }`}
+                  onClick={() => {
+                    setInputType("xlm");
+                    setAmount("");
+                    setError("");
+                  }}
+                  disabled={isSubmitting || buyLoading || checkingTrustline}
+                >
+                  XLM
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 rounded-md px-3 py-2 transition ${
+                    inputType === "tokens"
+                      ? "bg-foreground text-background"
+                      : "hover:text-foreground"
+                  }`}
+                  onClick={() => {
+                    setInputType("tokens");
+                    setAmount("");
+                    setError("");
+                  }}
+                  disabled={isSubmitting || buyLoading || checkingTrustline}
+                >
+                  {tokenSymbol}
+                </button>
+              </div>
+
+              {/* Amount Input */}
+              <div className="space-y-2">
+                <Label htmlFor="amount">
+                  {inputType === "xlm"
+                    ? "Amount to Pay (XLM)"
+                    : `Amount to Buy (${tokenSymbol})`}
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.0000001"
+                    min="0"
+                    value={amount}
+                    onChange={(e) => {
+                      setAmount(e.target.value);
                       setError("");
                     }}
-                    disabled={isSubmitting}
-                  >
-                    USDC
-                  </button>
-                  <button
-                    type="button"
-                    className={`flex-1 rounded-md px-3 py-2 transition ${inputType === "tokens" ? "bg-foreground text-background" : "hover:text-foreground"}`}
-                    onClick={() => {
-                      setInputType("tokens");
-                      setAmount("");
-                      setError("");
-                    }}
-                    disabled={isSubmitting}
-                  >
-                    {tokenSymbol}
-                  </button>
+                    placeholder="0.0000000"
+                    disabled={
+                      isSubmitting || buyLoading || checkingTrustline || !address
+                    }
+                    required
+                    autoFocus
+                    className="pr-16 text-lg"
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-muted-foreground">
+                    {inputType === "xlm" ? "XLM" : tokenSymbol}
+                  </span>
                 </div>
+                {(error || buyError) && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error || buyError}</AlertDescription>
+                  </Alert>
+                )}
+                {checkingTrustline && (
+                  <Alert>
+                    <AlertDescription className="text-amber-500">
+                      Checking trustline...
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="amount">
-                    {inputType === "usdc"
-                      ? "Amount to Pay (USDC)"
-                      : `Amount to Buy (${tokenSymbol})`}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={amount}
-                      onChange={(e) => {
-                        setAmount(e.target.value);
-                        setError("");
-                      }}
-                      placeholder="0.00"
-                      disabled={isSubmitting}
-                      required
-                      autoFocus
-                      className="pr-16 text-lg"
-                    />
-                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-muted-foreground">
-                      {inputType === "usdc" ? "USDC" : tokenSymbol}
-                    </span>
-                  </div>
-                  {error && <p className="text-xs text-destructive">{error}</p>}
-                </div>
-
-                <div className="space-y-3 rounded-xl border border-border/60 bg-background/40 p-4 text-sm">
+              {/* Purchase Info */}
+              <Card>
+                <CardContent className="pt-6 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">
+                    <span className="text-sm text-muted-foreground">
                       You will receive:
                     </span>
-                    <span className="font-semibold text-foreground">
+                    <span className="text-sm font-semibold text-foreground">
                       {tokenAmount > 0
-                        ? `${tokenAmount.toFixed(4)} ${tokenSymbol}`
-                        : `0.0000 ${tokenSymbol}`}
+                        ? `${tokenAmount.toFixed(7)} ${tokenSymbol}`
+                        : `0.0000000 ${tokenSymbol}`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between border-t border-border/40 pt-3">
-                    <span className="text-muted-foreground">Pay with:</span>
-                    <span className="font-semibold text-amber-300">
-                      {usdcAmount > 0
-                        ? `${usdcAmount.toFixed(2)} USDC`
-                        : "0.00 USDC"}
+                    <span className="text-sm text-muted-foreground">
+                      Pay with:
+                    </span>
+                    <span className="text-sm font-semibold text-amber-300">
+                      {xlmAmount > 0
+                        ? `${xlmAmount.toFixed(7)} XLM`
+                        : "0.0000000 XLM"}
                     </span>
                   </div>
-                </div>
-              </form>
+                </CardContent>
+              </Card>
+            </form>
 
-              <DialogFooter className="gap-2 sm:flex-row">
-                <Button
-                  type="submit"
-                  form="buyTokenForm"
-                  disabled={
-                    !amount ||
-                    isNaN(parseFloat(amount)) ||
-                    parseFloat(amount) <= 0 ||
-                    isSubmitting
-                  }
-                  className="min-w-[180px]"
-                >
-                  {isSubmitting ? (
-                    <span className="inline-flex items-center gap-2 text-sm">
-                      <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Processing...
+            <DialogFooter className="gap-2 sm:flex-row">
+              <Button
+                type="submit"
+                form="buyTokenForm"
+                disabled={
+                  !amount ||
+                  isNaN(parseFloat(amount)) ||
+                  parseFloat(amount) <= 0 ||
+                  isSubmitting ||
+                  buyLoading ||
+                  checkingTrustline ||
+                  !address
+                }
+                className="min-w-[180px]"
+              >
+                {isSubmitting || buyLoading || checkingTrustline ? (
+                  <span className="inline-flex items-center gap-2 text-sm">
+                    <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    {checkingTrustline
+                      ? "Checking trustline..."
+                      : buyLoading
+                        ? "Processing..."
+                        : "Submitting..."}
+                  </span>
+                ) : (
+                  <>
+                    <span role="img" aria-hidden>
+                      💰
                     </span>
-                  ) : (
-                    <>
-                      <span role="img" aria-hidden>
-                        💰
-                      </span>
-                      Buy with USDC
-                    </>
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleClose}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      )}
+                    Buy with XLM
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleClose}
+                disabled={isSubmitting || buyLoading || checkingTrustline}
+              >
+                Cancel
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
     </Dialog>
   );
 };

@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { useProfileType } from "../hooks/useProfileType";
-import CreateSACTokenButton from "../components/CreateSACTokenButton";
+import { CreateTokenForm } from "../components/CreateTokenForm";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -30,6 +31,15 @@ const fanHighlights = [
 
 const Home: React.FC = () => {
   const { profileType } = useProfileType();
+  const [showCreateTokenForm, setShowCreateTokenForm] = useState(false);
+
+  const handleTokenCreationSuccess = () => {
+    console.log("Token created successfully!");
+    // You can add additional logic here, such as:
+    // - Refreshing token list
+    // - Showing a success notification
+    // - Redirecting to token page
+  };
 
   return (
     <div className="container space-y-12 px-4 py-10">
@@ -78,7 +88,12 @@ const Home: React.FC = () => {
                   Broadcast updates across Dropsland, social, and IRL moments.
                 </li>
               </ul>
-              <CreateSACTokenButton />
+              <Button
+                onClick={() => setShowCreateTokenForm(true)}
+                className="w-full sm:w-auto"
+              >
+                Create Your Token
+              </Button>
             </CardContent>
           </Card>
         </section>
@@ -112,6 +127,13 @@ const Home: React.FC = () => {
           </div>
         </section>
       )}
+
+      {/* Create Token Form */}
+      <CreateTokenForm
+        visible={showCreateTokenForm}
+        onClose={() => setShowCreateTokenForm(false)}
+        onSuccess={handleTokenCreationSuccess}
+      />
     </div>
   );
 };

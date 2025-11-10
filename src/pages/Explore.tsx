@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BuyDialog } from "../components/BuyDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,16 +10,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface Artist {
-  id: string;
-  name: string;
-  handle: string;
-  avatar?: string;
-  genres: string[];
-  isFeatured: boolean;
-  tokenSymbol?: string;
-}
+import { listDistributedTokens } from "../services/artistTokens";
+import type { ArtistToken, TokenDisplay } from "../types/artistToken";
 
 const filterTabs: Array<{
   id: "all" | "artists" | "tokens" | "nfts";
@@ -30,58 +23,92 @@ const filterTabs: Array<{
   { id: "nfts", label: "NFTs" },
 ];
 
+// Transform ArtistToken to TokenDisplay format
+const transformTokenToDisplay = (token: ArtistToken): TokenDisplay => {
+  // Extract handle from artist_name or use a shortened version of the public key
+  const handle =
+    token.artist_name?.toLowerCase().replace(/\s+/g, "") ||
+    `${token.artist_public_key.slice(0, 8)}...${token.artist_public_key.slice(-4)}`;
+
+  // Extract genres from metadata tags or use a default
+  const genres =
+    token.metadata?.tags && token.metadata.tags.length > 0
+      ? token.metadata.tags
+      : token.metadata?.category
+        ? [token.metadata.category]
+        : ["Music"];
+
+  return {
+    id: token.id,
+    name: token.artist_name || "Unknown Artist",
+    handle: handle,
+    avatar: token.image_url || undefined,
+    genres: genres,
+    isFeatured: false, // Can be enhanced later with a featured flag
+    tokenSymbol: token.token_code,
+    tokenIssuer: token.artist_public_key,
+    description: token.description || undefined,
+    imageUrl: token.image_url || undefined,
+    totalSupply: token.total_supply,
+    distributedAt: token.distributed_at || undefined,
+  };
+};
+
 const Explore: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "artists" | "tokens" | "nfts">(
     "all",
   );
-  const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+  const [selectedToken, setSelectedToken] = useState<TokenDisplay | null>(null);
   const [isBuyDialogOpen, setIsBuyDialogOpen] = useState(false);
 
-  const artists: Artist[] = [
-    {
-      id: "1",
-      name: "iamjuampi",
-      handle: "iamjuampi",
-      genres: ["Tech-House"],
-      isFeatured: true,
-      tokenSymbol: "JUAMPI",
-    },
-    {
-      id: "2",
-      name: "Banger",
-      handle: "banger",
-      genres: ["DNB", "Tech-House"],
-      isFeatured: true,
-      tokenSymbol: "BANG",
-    },
-  ];
-
-  const handleBuyClick = (artist: Artist) => {
-    setSelectedArtist(artist);
-    setIsBuyDialogOpen(true);
-  };
-
-  const handleBuyConfirm = async (amount: number) => {
-    if (!selectedArtist) return;
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.info(
-      `Purchasing ${amount} ${selectedArtist.tokenSymbol} with USDC`,
-    );
-  };
-
-  const searchMatches = artists.filter((artist) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      artist.name.toLowerCase().includes(query) ||
-      artist.handle.toLowerCase().includes(query) ||
-      artist.genres.some((genre) => genre.toLowerCase().includes(query))
-    );
+  // Fetch distributed tokens using React Query
+  const {
+    data: tokensData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["distributedTokens"],
+    queryFn: () => listDistributedTokens(100, 0),
+    refetchOnWindowFocus: false,
+    retry: 2,
   });
 
-  const filteredArtists =
-    filter === "artists" || filter === "all" ? searchMatches : [];
+  // Transform tokens to display format
+  const tokens = useMemo(() => {
+    if (!tokensData?.tokens) return [];
+    return tokensData.tokens.map(transformTokenToDisplay);
+  }, [tokensData]);
+
+  const handleBuyClick = (token: TokenDisplay) => {
+    // Only allow buying if both tokenSymbol and tokenIssuer are available
+    if (token.tokenSymbol && token.tokenIssuer) {
+      setSelectedToken(token);
+      setIsBuyDialogOpen(true);
+    }
+  };
+
+  // Filter tokens based on search query
+  const searchMatches = useMemo(() => {
+    if (!searchQuery) return tokens;
+    const query = searchQuery.toLowerCase();
+    return tokens.filter((token) => {
+      return (
+        token.name.toLowerCase().includes(query) ||
+        token.handle.toLowerCase().includes(query) ||
+        token.tokenSymbol.toLowerCase().includes(query) ||
+        token.genres.some((genre) => genre.toLowerCase().includes(query)) ||
+        (token.description && token.description.toLowerCase().includes(query))
+      );
+    });
+  }, [tokens, searchQuery]);
+
+  // Apply filter
+  const filteredTokens =
+    filter === "artists" || filter === "all" || filter === "tokens"
+      ? searchMatches
+      : [];
 
   return (
     <div className="container space-y-8 px-4 py-10">
@@ -129,85 +156,159 @@ const Explore: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">Artists</h2>
-            <p className="text-sm text-muted-foreground">
-              Tokenized collectives and DJs you can support right now.
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-white">
+                Distributed Tokens
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Tokenized collectives and DJs you can support right now.
+                {tokensData && (
+                  <span className="ml-2">
+                    ({tokensData.count} token{tokensData.count !== 1 ? "s" : ""}
+                    )
+                  </span>
+                )}
+              </p>
+            </div>
+            {error && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  void refetch();
+                }}
+                className="text-xs"
+              >
+                Retry
+              </Button>
+            )}
           </div>
 
-          <div className="space-y-4">
-            {filteredArtists.map((artist) => (
-              <Card
-                key={artist.id}
-                className="border-border/60 bg-gradient-to-r from-background/80 to-background/40"
-              >
-                <CardContent className="flex flex-col gap-6 py-6 md:flex-row md:items-center md:justify-between">
-                  <div className="flex flex-1 items-center gap-4">
-                    <div className="flex size-14 items-center justify-center rounded-full border border-border/60 bg-background/60 text-lg font-semibold text-amber-200">
-                      {artist.avatar ? (
-                        <img
-                          src={artist.avatar}
-                          alt={artist.name}
-                          className="size-full rounded-full object-cover"
-                        />
-                      ) : (
-                        artist.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-xl text-white">
-                          {artist.name}
-                        </CardTitle>
-                        {artist.isFeatured && (
-                          <Badge
-                            variant="secondary"
-                            className="uppercase tracking-wide"
-                          >
-                            Featured
-                          </Badge>
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">Loading tokens...</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg border border-red-500/50 bg-red-500/10 p-4">
+              <p className="text-sm text-red-400">
+                Error loading tokens:{" "}
+                {error instanceof Error ? error.message : "Unknown error"}
+              </p>
+            </div>
+          )}
+
+          {!isLoading && !error && filteredTokens.length === 0 && (
+            <div className="rounded-lg border border-border/60 bg-background/40 p-8 text-center">
+              <p className="text-muted-foreground">
+                {searchQuery
+                  ? "No tokens match your search."
+                  : "No distributed tokens found."}
+              </p>
+            </div>
+          )}
+
+          {!isLoading && !error && filteredTokens.length > 0 && (
+            <div className="space-y-4">
+              {filteredTokens.map((token) => (
+                <Card
+                  key={token.id}
+                  className="border-border/60 bg-gradient-to-r from-background/80 to-background/40"
+                >
+                  <CardContent className="flex flex-col gap-6 py-6 md:flex-row md:items-center md:justify-between">
+                    <div className="flex flex-1 items-center gap-4">
+                      <div className="flex size-14 items-center justify-center rounded-full border border-border/60 bg-background/60 text-lg font-semibold text-amber-200">
+                        {token.avatar ? (
+                          <img
+                            src={token.avatar}
+                            alt={token.name}
+                            className="size-full rounded-full object-cover"
+                          />
+                        ) : (
+                          token.name.charAt(0).toUpperCase()
                         )}
                       </div>
-                      <CardDescription>@{artist.handle}</CardDescription>
-                      <div className="flex flex-wrap gap-2">
-                        {artist.genres.map((genre) => (
-                          <Badge key={genre} variant="outline">
-                            {genre}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-xl text-white">
+                            {token.name}
+                          </CardTitle>
+                          {token.isFeatured && (
+                            <Badge
+                              variant="secondary"
+                              className="uppercase tracking-wide"
+                            >
+                              Featured
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            Distributed
                           </Badge>
-                        ))}
+                        </div>
+                        <CardDescription>@{token.handle}</CardDescription>
+                        {token.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {token.description}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {token.genres.map((genre) => (
+                            <Badge key={genre} variant="outline">
+                              {genre}
+                            </Badge>
+                          ))}
+                        </div>
+                        {token.distributedAt && (
+                          <p className="text-xs text-muted-foreground">
+                            Distributed:{" "}
+                            {new Date(token.distributedAt).toLocaleDateString()}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-start gap-2 md:items-end">
-                    <p className="text-sm text-muted-foreground">
-                      Token: {artist.tokenSymbol ?? "TBD"}
-                    </p>
-                    <Button
-                      onClick={() => handleBuyClick(artist)}
-                      className="w-full md:w-auto"
-                    >
-                      💰 Buy
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex flex-col items-start gap-2 md:items-end">
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-white">
+                          {token.tokenSymbol}
+                        </p>
+                        {token.totalSupply && (
+                          <p className="text-xs text-muted-foreground">
+                            Supply: {Number(token.totalSupply).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        onClick={() => handleBuyClick(token)}
+                        className="w-full md:w-auto"
+                        disabled={!token.tokenSymbol || !token.tokenIssuer}
+                      >
+                        💰 Buy
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {selectedArtist && (
-        <BuyDialog
-          visible={isBuyDialogOpen}
-          onClose={() => {
-            setIsBuyDialogOpen(false);
-            setSelectedArtist(null);
-          }}
-          tokenSymbol={selectedArtist.tokenSymbol || ""}
-          onConfirm={handleBuyConfirm}
-        />
-      )}
+      {/* Buy Dialog - only show if tokenSymbol and tokenIssuer are available */}
+      {selectedToken &&
+        selectedToken.tokenSymbol &&
+        selectedToken.tokenIssuer && (
+          <BuyDialog
+            visible={isBuyDialogOpen}
+            onClose={() => {
+              setIsBuyDialogOpen(false);
+              setSelectedToken(null);
+            }}
+            tokenSymbol={selectedToken.tokenSymbol}
+            tokenIssuer={selectedToken.tokenIssuer}
+          />
+        )}
     </div>
   );
 };

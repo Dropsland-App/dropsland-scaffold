@@ -15,6 +15,7 @@ export default tseslint.config(
     "src/contracts/*",
     "!src/contracts/util.ts",
     "target",
+    "supabase/**/*",
   ]),
   {
     extends: [
