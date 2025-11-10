@@ -7,7 +7,8 @@ use soroban_sdk::Address;
 pub enum DataKey {
     Admin,
     Token,
-    FundgibleWasm,
+    FungibleWasm,
+    NftWasm,
     DeployNonce,
 
     TokenRegistry,      // Will store the Vec<Address> for enumeration

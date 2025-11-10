@@ -13,17 +13,17 @@ run-locally = true # automatically start the local network container, if not alr
 name = "me" # Required. Keys for this account will be saved to `./.stellar/identity`
 default = true # Optional. Whether to use this account as the `--source` for commands that need one.
 
-[development.contracts]
-fungible_allowlist_example = { client = true, constructor_args = "--admin me --manager me --initial_supply 1000000000000000000000000" }
-nft_enumerable_example = { client = true, constructor_args = "--owner me" }
-
 [development.contracts.dj_fungible]
 client = true
 constructor_args = "--admin me --manager me --initial_supply 1000000000000000000000"
 
+[development.contracts.dj_nft]
+client = true
+constructor_args = "--owner me --base_uri https://example.com --name MyNFT --symbol MYNFT"
+
 [development.contracts.factory]
 client = true
-constructor_args = "--admin me --token CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC --fungible_wasm 83a316c7f943f155817bbf6b20fbca25c48b1583ca16a8011f006345146957fe"
+constructor_args = "--admin me --token CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC --fungible_wasm 8f83b54a717f9fb588ca00bf6aeab84a9286560a6156b4bd5e5f971d0fb58e58 --nft_wasm c310fe3728f1e3556fdd4b49fb632fac6423b81a3789f877e100c9f512317281"
 
 # Rather than in one list, TOML allows specifying contracts in their own "sections"
 [development.contracts.guess_the_number]

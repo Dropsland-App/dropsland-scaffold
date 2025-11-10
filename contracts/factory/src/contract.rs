@@ -7,7 +7,7 @@ use crate::{
     events,
     storage::{
         admin::{has_admin, set_admin},
-        token::{get_fundgible_wasm, set_fundgible_wasm, set_token},
+        token::{get_fungible_wasm, get_nft_wasm, set_fungible_wasm, set_nft_wasm, set_token},
         types::{DataKey, Error, RegistryEntry, TokenType},
     },
 };
@@ -22,13 +22,15 @@ impl FactoryContract {
         admin: Address,
         token: Address,
         fungible_wasm: BytesN<32>,
+        nft_wasm: BytesN<32>,
     ) -> Result<(), Error> {
         if has_admin(&env) {
             return Err(Error::ContractInitialized);
         }
         set_admin(&env, &admin);
         set_token(&env, &token);
-        set_fundgible_wasm(&env, &fungible_wasm);
+        set_fungible_wasm(&env, &fungible_wasm);
+        set_nft_wasm(&env, &nft_wasm);
         events::contract::contract_initialized(&env, &admin, &token); // TODO! Add fundgible token to event
         Ok(())
     }
@@ -72,7 +74,7 @@ impl FactoryContract {
         name: String,
         symbol: String,
     ) -> Result<Address, Error> {
-        let fundgible_wasm = get_fundgible_wasm(&env)?;
+        let fundgible_wasm = get_fungible_wasm(&env)?;
         let salt = get_salt(&env);
         let constructor_args: Vec<Val> = vec![
             &env,
@@ -88,6 +90,32 @@ impl FactoryContract {
             .deploy_v2(fundgible_wasm, constructor_args);
 
         register_token(&env, &owner, &deployed_address, TokenType::Fungible);
+        Ok(deployed_address)
+    }
+
+    pub fn create_nft(
+        env: Env,
+        owner: Address,
+        base_uri: String,
+        name: String,
+        symbol: String,
+    ) -> Result<Address, Error> {
+        let fundgible_wasm = get_nft_wasm(&env)?;
+        let salt = get_salt(&env);
+        let constructor_args: Vec<Val> = vec![
+            &env,
+            owner.into_val(&env),
+            base_uri.into_val(&env),
+            name.into_val(&env),
+            symbol.into_val(&env),
+        ];
+
+        let deployed_address = env
+            .deployer()
+            .with_address(env.current_contract_address(), salt)
+            .deploy_v2(fundgible_wasm, constructor_args);
+
+        register_token(&env, &owner, &deployed_address, TokenType::Nft);
         Ok(deployed_address)
     }
 
@@ -119,7 +147,11 @@ impl FactoryContract {
     }
 
     pub fn get_fungible_wasm(env: Env) -> Result<BytesN<32>, Error> {
-        get_fundgible_wasm(&env)
+        get_fungible_wasm(&env)
+    }
+
+    pub fn get_nft_wasm(env: Env) -> Result<BytesN<32>, Error> {
+        get_nft_wasm(&env)
     }
 }
 
