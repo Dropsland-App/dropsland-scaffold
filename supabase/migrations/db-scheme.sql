@@ -286,6 +286,11 @@ CREATE POLICY "Artists can view own tokens" ON artist_tokens
     FOR SELECT
     USING (auth.uid()::text = artist_public_key);
 
+-- Política: Todos pueden ver tokens distribuidos (para el explorador público)
+CREATE POLICY "Anyone can view distributed tokens" ON artist_tokens
+    FOR SELECT
+    USING (status = 'distributed');
+
 -- Política: Todos pueden ver listings activos
 CREATE POLICY "Anyone can view active listings" ON marketplace_listings
     FOR SELECT

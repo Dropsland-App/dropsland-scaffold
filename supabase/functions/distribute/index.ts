@@ -660,10 +660,8 @@ Deno.serve(async (req) => {
     }
 
     // Use the smaller of remaining balance or artist amount for the sell offer
-    const sellOfferAmount = Math.min(
-      remainingBalance,
-      parseFloat(artistAmountStr),
-    );
+    const sellOfferAmount =
+      Math.min(remainingBalance, parseFloat(artistAmountStr)) / 2;
 
     // Create distribution transaction with payment and sell offer
     // Only send platform fee to treasury (artist cannot receive their own tokens)

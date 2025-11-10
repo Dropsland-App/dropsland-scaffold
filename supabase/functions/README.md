@@ -1,6 +1,6 @@
 # Supabase Edge Functions for Token Creation
 
-This directory contains 5 Supabase Edge Functions for the token creation flow.
+This directory contains 6 Supabase Edge Functions for the token creation flow.
 
 ## Functions
 
@@ -9,6 +9,7 @@ This directory contains 5 Supabase Edge Functions for the token creation flow.
 3. **emission-xdr** - Generates unsigned XDR for token emission
 4. **submit-signed** - Submits signed emission transaction to Stellar
 5. **distribute** - Executes token distribution to artist and platform
+6. **list-distributed-tokens** - Lists all artist tokens with status 'distributed' (for explorer)
 
 ## Setup
 
@@ -49,6 +50,7 @@ supabase functions deploy status
 supabase functions deploy emission-xdr
 supabase functions deploy submit-signed
 supabase functions deploy distribute
+supabase functions deploy list-distributed-tokens
 
 # Or deploy all at once (if supported)
 supabase functions deploy
@@ -192,6 +194,52 @@ In your Supabase dashboard:
   "transactionHash": "tx-hash"
 }
 ```
+
+### list-distributed-tokens
+
+**Endpoint:** `GET /functions/v1/list-distributed-tokens?limit=100&offset=0`
+
+**Query Parameters:**
+
+- `limit` (optional): Number of tokens to return (default: 100)
+- `offset` (optional): Number of tokens to skip (default: 0)
+
+**Response:**
+
+```json
+{
+  "tokens": [
+    {
+      "id": "uuid",
+      "artist_public_key": "GXXXXX...",
+      "artist_name": "Artist Name",
+      "token_code": "MYTOKEN",
+      "token_name": "My Token",
+      "total_supply": "1000000",
+      "description": "Token description",
+      "image_url": "https://...",
+      "status": "distributed",
+      "distributed_at": "2024-01-01T00:00:00Z",
+      "metadata": {
+        "category": "music",
+        "tags": ["electronic", "techno"],
+        "total_holders": 100,
+        "total_transactions": 50
+      }
+    }
+  ],
+  "count": 1,
+  "limit": 100,
+  "offset": 0
+}
+```
+
+**What it does:**
+
+1. Queries all artist_tokens with status = 'distributed'
+2. Optionally fetches metadata for each token
+3. Returns paginated results sorted by distributed_at (newest first)
+4. Uses service role key to bypass RLS (allows public access to distributed tokens)
 
 ## Network Configuration
 
