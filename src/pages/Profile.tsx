@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useProfileType } from "../hooks/useProfileType";
 import { useWallet } from "../hooks/useWallet";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { CreateNftCollectionForm } from "@/components/CreateNftCollectionForm";
+import { RewardManagerCard } from "@/components/RewardManagerCard";
 
 const stats = [
   { label: "Token Holders", value: "0" },
@@ -20,6 +22,7 @@ const stats = [
 const Profile: React.FC = () => {
   const { profileType } = useProfileType();
   const { address } = useWallet();
+  const [isNftFormVisible, setIsNftFormVisible] = useState(false);
 
   return (
     <div className="container mx-auto space-y-8 px-4 py-10">
@@ -73,6 +76,29 @@ const Profile: React.FC = () => {
               </p>
             </CardContent>
           </Card>
+
+          <Card className="border-border/60 bg-background/70">
+            <CardHeader>
+              <CardTitle>Your NFT Collections</CardTitle>
+              <CardDescription>
+                Deploy NFT rewards to engage your biggest fans.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Launch a fresh NFT collection that you can airdrop or sell to
+                your community.
+              </p>
+              <Button type="button" onClick={() => setIsNftFormVisible(true)}>
+                Create New Collection
+              </Button>
+            </CardContent>
+          </Card>
+
+          <RewardManagerCard
+            artistPublicKey={address}
+            onRequestCreateCollection={() => setIsNftFormVisible(true)}
+          />
 
           <Card className="border-border/60 bg-background/70">
             <CardHeader>
@@ -153,6 +179,10 @@ const Profile: React.FC = () => {
           </Card>
         </div>
       )}
+      <CreateNftCollectionForm
+        visible={isNftFormVisible}
+        onClose={() => setIsNftFormVisible(false)}
+      />
     </div>
   );
 };

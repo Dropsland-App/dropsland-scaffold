@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useOwnedNfts } from "../hooks/useOwnedNfts";
 
 const isCreditAsset = (
   balance: Balance,
@@ -25,7 +26,15 @@ const isCreditAsset = (
 const Wallet: React.FC = () => {
   const { address, isPending } = useWallet();
   const { xlm, balances, isLoading, error } = useWalletBalance();
+  const {
+    data: ownedCollections = [],
+    isPending: ownedLoading,
+    error: ownedError,
+    refetch: refetchOwned,
+  } = useOwnedNfts(address);
   const creditBalances = balances.filter(isCreditAsset);
+  const formatContract = (value: string) =>
+    value.length > 12 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value;
 
   return (
     <div className="container mx-auto space-y-8 px-4 py-10">
@@ -151,16 +160,56 @@ const Wallet: React.FC = () => {
                 chats.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                No NFTs minted yet. Watch this space or explore drops to
-                collect.
-              </p>
-              <ul className="list-disc space-y-1 pl-4">
-                <li>Private listening parties & green room access.</li>
-                <li>Token airdrops + allowlist fast tracks.</li>
-                <li>Physical merch and IRL meetups.</li>
-              </ul>
+            <CardContent className="space-y-3">
+              {ownedLoading ? (
+                <p className="text-sm text-muted-foreground">
+                  Checking Soroban contracts for your collectibles...
+                </p>
+              ) : ownedError ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-red-400">
+                    {ownedError instanceof Error
+                      ? ownedError.message
+                      : "Unable to load owned NFTs"}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void refetchOwned()}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : ownedCollections.length === 0 ? (
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>
+                    No NFTs minted yet. Claim a reward from an artist to see it
+                    here.
+                  </p>
+                  <ul className="list-disc space-y-1 pl-4">
+                    <li>Private listening parties & green room access.</li>
+                    <li>Token airdrops + allowlist fast tracks.</li>
+                    <li>Physical merch and IRL meetups.</li>
+                  </ul>
+                </div>
+              ) : (
+                <div className="space-y-3 text-sm">
+                  {ownedCollections.map((collection) => (
+                    <div
+                      key={collection.contractId}
+                      className="rounded-md border border-border/40 bg-background/50 p-3"
+                    >
+                      <p className="text-sm font-semibold text-white">
+                        Collection {formatContract(collection.contractId)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Token IDs: {collection.tokenIds.join(", ")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

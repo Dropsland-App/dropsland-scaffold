@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BuyDialog } from "../components/BuyDialog";
+import { RewardsDialog } from "../components/RewardsDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -61,6 +62,9 @@ const Explore: React.FC = () => {
   );
   const [selectedToken, setSelectedToken] = useState<TokenDisplay | null>(null);
   const [isBuyDialogOpen, setIsBuyDialogOpen] = useState(false);
+  const [rewardDialogArtist, setRewardDialogArtist] =
+    useState<TokenDisplay | null>(null);
+  const [isRewardsDialogOpen, setIsRewardsDialogOpen] = useState(false);
 
   // Fetch distributed tokens using React Query
   const {
@@ -87,6 +91,12 @@ const Explore: React.FC = () => {
       setSelectedToken(token);
       setIsBuyDialogOpen(true);
     }
+  };
+
+  const handleRewardsClick = (token: TokenDisplay) => {
+    if (!token.tokenIssuer) return;
+    setRewardDialogArtist(token);
+    setIsRewardsDialogOpen(true);
   };
 
   // Filter tokens based on search query
@@ -279,13 +289,24 @@ const Explore: React.FC = () => {
                           </p>
                         )}
                       </div>
-                      <Button
-                        onClick={() => handleBuyClick(token)}
-                        className="w-full md:w-auto"
-                        disabled={!token.tokenSymbol || !token.tokenIssuer}
-                      >
-                        💰 Buy
-                      </Button>
+                      <div className="flex w-full flex-col gap-2 md:w-auto">
+                        <Button
+                          onClick={() => handleBuyClick(token)}
+                          className="w-full md:w-auto"
+                          disabled={!token.tokenSymbol || !token.tokenIssuer}
+                        >
+                          💰 Buy
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full md:w-auto"
+                          onClick={() => handleRewardsClick(token)}
+                          disabled={!token.tokenIssuer}
+                        >
+                          🎁 Rewards
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -309,6 +330,19 @@ const Explore: React.FC = () => {
             tokenIssuer={selectedToken.tokenIssuer}
           />
         )}
+
+      {rewardDialogArtist && (
+        <RewardsDialog
+          artist={rewardDialogArtist}
+          open={isRewardsDialogOpen}
+          onOpenChange={(open) => {
+            setIsRewardsDialogOpen(open);
+            if (!open) {
+              setRewardDialogArtist(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

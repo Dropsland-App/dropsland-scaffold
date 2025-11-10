@@ -199,6 +199,24 @@ CREATE TABLE marketplace_sales (
 );
 
 -- ============================================
+-- TABLA: rewards (definiciones de recompensas NFT)
+-- ============================================
+CREATE TABLE rewards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    artist_public_key VARCHAR(56) NOT NULL,
+    nft_contract_id VARCHAR(56) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    image_url TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Índices para búsquedas rápidas
+CREATE INDEX idx_rewards_artist ON rewards(artist_public_key);
+CREATE INDEX idx_rewards_contract ON rewards(nft_contract_id);
+
+-- ============================================
 -- TABLA: platform_analytics (métricas de la plataforma)
 -- ============================================
 CREATE TABLE platform_analytics (
