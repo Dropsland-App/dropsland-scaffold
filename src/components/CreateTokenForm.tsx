@@ -88,6 +88,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
   } = useTokenCreation();
 
   const [formData, setFormData] = useState<TokenCreationFormData>({
+    artistName: "",
     tokenCode: "",
     tokenName: "",
     totalSupply: "1000000000", // Fixed at 1 billion
@@ -110,6 +111,7 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
     if (!visible) {
       reset();
       setFormData({
+        artistName: "",
         tokenCode: "",
         tokenName: "",
         totalSupply: "1000000000", // Fixed at 1 billion
@@ -179,7 +181,11 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
     }
 
     // Validate form
-    if (!formData.tokenCode.trim() || !formData.tokenName.trim()) {
+    if (
+      !formData.artistName.trim() ||
+      !formData.tokenCode.trim() ||
+      !formData.tokenName.trim()
+    ) {
       setError("Please fill in all required fields");
       console.log("Validation failed: missing fields");
       return;
@@ -293,6 +299,21 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                   }}
                   className="space-y-4"
                 >
+                  <div className="space-y-2">
+                    <Label htmlFor="artistName">Artist / DJ Name</Label>
+                    <Input
+                      id="artistName"
+                      type="text"
+                      value={formData.artistName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, artistName: e.target.value })
+                      }
+                      placeholder="e.g. DJ Solar"
+                      disabled={state.loading}
+                      required
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="tokenCode">
                       Token Code (1-12 characters)
