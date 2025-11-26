@@ -3,33 +3,50 @@ NATIVE_TOKEN := $(shell stellar contract asset id --asset native --network testn
 
 all: deploy-dj-fungible
 
+FACTORY = factory
+SOURCE_ACCOUNT = me
+
+FUNGIBLE_WASM = 8f83b54a717f9fb588ca00bf6aeab84a9286560a6156b4bd5e5f971d0fb58e58
+NFT_WASM = c310fe3728f1e3556fdd4b49fb632fac6423b81a3789f877e100c9f512317281
+
 build:
 	stellar contract build
 
 optimize: build
-	stellar contract optimize --wasm target/wasm32v1-none/release/dj_fungible.wasm
+	stellar contract optimize --wasm target/wasm32v1-none/release/$(FACTORY).wasm
 
-deploy-dj-fungible:
+deploy-factory: optimize
 	stellar contract deploy \
-    	--wasm target/wasm32v1-none/release/dj_fungible.optimized.wasm \
-		--source admin \
+	    --wasm target/wasm32v1-none/release/$(FACTORY).optimized.wasm \
+		--source "$(SOURCE_ACCOUNT)" \
 		--network testnet \
-		--alias dj_fungible \
+		--alias "$(FACTORY)" \
 		-- \
-		--admin admin \
-        --manager admin \
-		--decimals 7 \
-		--name "DJ_FUNGIBLE" \
-		--symbol "DJ_FUNGIBLE" \
-        --initial_supply 10000000000
+		--admin "$(SOURCE_ACCOUNT)" \
+		--token "$(NATIVE_TOKEN)" \
+		--fungible_wasm "$(FUNGIBLE_WASM)" \
+		--nft_wasm "$(NFT_WASM)"
 
-dj-fungible-create-order:
+upload-wasm: optimize
+	stellar contract upload \
+        --wasm target/wasm32v1-none/release/$(FUNGIBLE_TOKEN).optimized.wasm \
+        --source "$(SOURCE_ACCOUNT)" \
+        --network testnet
+
+	stellar contract upload \
+        --wasm target/wasm32v1-none/release/$(NFT_TOKEN).optimized.wasm \
+        --source "$(SOURCE_ACCOUNT)" \
+        --network testnet
+
+# Factory functions
+factory-create-nft:
 	stellar contract invoke \
-		--source admin \
+		--source "$(SOURCE_ACCOUNT)" \
 		--network testnet \
-		--id dj_fungible \
+		--id "$(FACTORY)" \
 		-- \
-		create_order \
-		--payment_token "$(NATIVE_TOKEN)" \
-		--amount 10000000 \
-		--price_per_token 1000000
+		create_nft \
+		--owner "$(SOURCE_ACCOUNT)" \
+		--base_uri "https://example.json" \
+		--name "NFT" \
+		--symbol "NFT"

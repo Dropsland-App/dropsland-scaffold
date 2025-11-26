@@ -1,14 +1,8 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import type {
-  AssembledTransaction,
-  Result,
-  SentTransaction,
-} from "@stellar/stellar-sdk/contract";
-import type { Client as FactoryContractClient } from "factory";
+import type { Result, SentTransaction } from "@stellar/stellar-sdk/contract";
 import { useWallet } from "./useWallet";
-import { useContracts } from "../debug/hooks/useContracts";
-import { networkPassphrase } from "../contracts/util";
+import factoryContract from "@/contracts/factory";
 
 interface NftFormParams {
   name: string;
@@ -22,27 +16,8 @@ interface CreateCollectionResult {
   collectionAddress?: string;
 }
 
-// Extended interface for factory client with create_nft method
-// TODO: Remove this once the factory client is regenerated with the create_nft method
-interface ExtendedFactoryClient extends FactoryContractClient {
-  create_nft: (
-    params: {
-      owner: string;
-      name: string;
-      symbol: string;
-      base_uri: string;
-    },
-    options?: {
-      fee?: number;
-      timeoutInSeconds?: number;
-      simulate?: boolean;
-    },
-  ) => Promise<AssembledTransaction<Result<string>>>;
-}
-
 export function useCreateNftCollection() {
   const { address, signTransaction } = useWallet();
-  const { data: contractData } = useContracts();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,15 +28,13 @@ export function useCreateNftCollection() {
         return null;
       }
 
-      const factoryContract = contractData?.loadedContracts?.factory
-        ?.default as ExtendedFactoryClient | undefined;
-
       if (!factoryContract) {
         setError(
           "Factory contract client not loaded. Is it configured in environments.toml?",
         );
         return null;
       }
+      factoryContract.options.publicKey = address;
 
       const normalizedInputs = {
         name: formData.name.trim(),
@@ -86,27 +59,14 @@ export function useCreateNftCollection() {
         });
 
         const sentTx = await tx.signAndSend({
-          signTransaction: (
-            xdr: string,
-            opts?: { networkPassphrase?: string },
-          ) =>
-            signTransaction(xdr, {
-              ...opts,
-              address,
-              networkPassphrase: String(networkPassphrase),
-            }),
+          signTransaction: async (xdr) => {
+            const { signedTxXdr } = await signTransaction(xdr);
+            return { signedTxXdr };
+          },
         });
 
         const result = sentTx.result;
-        let collectionAddress: string | undefined;
-
-        if (typeof result?.isOk === "function") {
-          if (!result.isOk()) {
-            throw new Error(result.unwrapErr().message);
-          }
-          collectionAddress = result.unwrap();
-        }
-
+        const collectionAddress = result.unwrap();
         const hash = sentTx.sendTransactionResponse?.hash;
 
         toast.success("NFT Collection Created!", {
@@ -146,7 +106,7 @@ export function useCreateNftCollection() {
         setLoading(false);
       }
     },
-    [address, signTransaction, contractData],
+    [address, signTransaction],
   );
 
   return { createCollection, loading, error };
