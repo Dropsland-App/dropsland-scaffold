@@ -1,14 +1,26 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { TrendingArtists } from "../components/feed/TrendingArtists";
 import { FeedCard, type FeedPost } from "../components/feed/FeedCard";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfileType } from "../hooks/useProfileType";
 import { BuyDialog } from "../components/BuyDialog";
+import { listDistributedTokens } from "../services/artistTokens";
 
-// Mock Data for the Feed
-const MOCK_FEED: FeedPost[] = [
+// Extended interface to include token data for the buy flow
+interface HomeFeedPost extends Omit<FeedPost, "onAction"> {
+  tokenData?: {
+    symbol: string;
+    issuer: string;
+  };
+}
+
+// Mock Data with specific token details ready for the DB implementation
+const MOCK_FEED: HomeFeedPost[] = [
   {
     id: "1",
     artistName: "DJ Solar",
@@ -20,6 +32,12 @@ const MOCK_FEED: FeedPost[] = [
       "My official artist token $SOLAR is finally live! Holders get access to my unreleased folders and VIP tickets for the Summer Tour. Let's build this economy together. 🌞",
     stats: { likes: 1240, comments: 85 },
     actionLabel: "Buy $SOLAR",
+    // When DB is ready, this data will come from the relation to the token table
+    tokenData: {
+      symbol: "SOLAR",
+      // Using a placeholder issuer - in prod this comes from the DB
+      issuer: "GBKB...MOCK_ISSUER_ADDRESS",
+    },
   },
   {
     id: "2",
@@ -34,6 +52,7 @@ const MOCK_FEED: FeedPost[] = [
       "https://images.unsplash.com/photo-1576158187551-b3846f756510?q=80&w=2940&auto=format&fit=crop",
     stats: { likes: 892, comments: 45 },
     actionLabel: "Mint Pass (50 XLM)",
+    // NFT logic would go here
   },
   {
     id: "3",
@@ -52,8 +71,17 @@ const MOCK_FEED: FeedPost[] = [
 
 const ScaffoldHome: React.FC = () => {
   const { profileType } = useProfileType();
+  const navigate = useNavigate();
 
-  // State for interactions
+  // Fetch suggested artists (Real data from Factory/DB)
+  const { data: suggestedData, isLoading: isLoadingSuggestions } = useQuery({
+    queryKey: ["suggestedArtists"],
+    queryFn: () => listDistributedTokens(5, 0),
+    staleTime: 60000,
+    retry: false,
+  });
+
+  // State for Buy Dialog
   const [buyDialogState, setBuyDialogState] = useState<{
     open: boolean;
     symbol: string;
@@ -64,15 +92,12 @@ const ScaffoldHome: React.FC = () => {
     issuer: "",
   });
 
-  const handleBuyClick = (post: FeedPost) => {
-    // In a real app, post would contain the token details
-    if (post.type === "token_launch") {
-      setBuyDialogState({
-        open: true,
-        symbol: "SOLAR",
-        issuer: "G...MOCK_ISSUER", // Replace with real data logic later
-      });
-    }
+  const handleBuyClick = (symbol: string, issuer: string) => {
+    setBuyDialogState({
+      open: true,
+      symbol,
+      issuer,
+    });
   };
 
   return (
@@ -87,7 +112,7 @@ const ScaffoldHome: React.FC = () => {
           />
         </div>
 
-        {/* Trending Section (Stories Style) */}
+        {/* Trending Section */}
         <div>
           <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
             Trending Creators
@@ -127,7 +152,14 @@ const ScaffoldHome: React.FC = () => {
               key={post.id}
               post={{
                 ...post,
-                onAction: () => handleBuyClick(post),
+                // Wire up the buy button if token data exists
+                onAction: post.tokenData
+                  ? () =>
+                      handleBuyClick(
+                        post.tokenData!.symbol,
+                        post.tokenData!.issuer,
+                      )
+                  : undefined,
               }}
             />
           ))}
@@ -166,7 +198,11 @@ const ScaffoldHome: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <Button className="w-full font-bold" variant="default">
+                <Button
+                  className="w-full font-bold"
+                  variant="default"
+                  onClick={() => void navigate("/profile")}
+                >
                   Go to Profile Manager
                 </Button>
               </div>
@@ -178,32 +214,101 @@ const ScaffoldHome: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   You need 2 more tokens to unlock "VIP Status" with Neon Pulse.
                 </p>
-                <Button className="w-full" variant="outline">
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => void navigate("/wallet")}
+                >
                   View Wallet
                 </Button>
               </div>
             )}
 
-            {/* Suggested Follows */}
+            {/* Suggested Follows - Now with Real Data */}
             <div className="rounded-xl border border-border/40 bg-background/40 p-5">
               <h3 className="font-semibold text-foreground mb-4">
                 Suggested for you
               </h3>
               <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-                      <div className="space-y-1">
-                        <div className="h-3 w-20 bg-muted rounded animate-pulse" />
-                        <div className="h-2 w-12 bg-muted rounded animate-pulse" />
+                {isLoadingSuggestions ? (
+                  // Loading Skeletons
+                  [1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                        <div className="space-y-1">
+                          <div className="h-3 w-20 bg-muted rounded animate-pulse" />
+                          <div className="h-2 w-12 bg-muted rounded animate-pulse" />
+                        </div>
                       </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs"
+                        disabled
+                      >
+                        Follow
+                      </Button>
                     </div>
-                    <Button size="sm" variant="ghost" className="h-8 text-xs">
-                      Follow
+                  ))
+                ) : suggestedData?.tokens && suggestedData.tokens.length > 0 ? (
+                  // Real Data Mapping
+                  suggestedData.tokens.slice(0, 4).map((token) => (
+                    <div
+                      key={token.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 border border-border/50">
+                          <AvatarImage
+                            src={
+                              token.image_url ||
+                              `https://api.dicebear.com/7.x/avataaars/svg?seed=${token.artist_name}`
+                            }
+                          />
+                          <AvatarFallback>
+                            {token.artist_name?.[0] || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
+                            {token.artist_name || "Unknown Artist"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+                            ${token.token_code}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() =>
+                          handleBuyClick(
+                            token.token_code,
+                            token.artist_public_key,
+                          )
+                        }
+                      >
+                        Buy
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  // Empty State
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      No suggestions yet.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void navigate("/explore")}
+                    >
+                      Explore All
                     </Button>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

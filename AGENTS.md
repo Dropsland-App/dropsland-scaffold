@@ -54,8 +54,6 @@ This project uses a hybrid **Stellar Soroban + Supabase** architecture:
   4. Watches Rust files → auto-regenerates clients
 
 - **`npm run install:contracts`** – Rebuilds WASM & regenerates bindings
-- **`make build`** – Compile Soroban contracts
-- **`make optimize`** – Optimize WASM for deployment
 - **`supabase start`** – Local Supabase (DB + Functions)
 
 ---
@@ -189,6 +187,10 @@ try {
   if (err instanceof Error) toast.error(err.message);
 }
 ```
+
+### Comments
+
+Avoid unnecessary comments, add concise and simple comments when they are really needed to understand what is happening on the code, or they why of a snippet.
 
 ---
 
