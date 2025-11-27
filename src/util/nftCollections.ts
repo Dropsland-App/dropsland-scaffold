@@ -61,7 +61,7 @@ export async function fetchNftCollections(
 
       // 3. Fetch Name and Symbol from the contract
       // We use Promise.all to fetch both in parallel for speed
-      const [nameStr, symbolStr] = await Promise.all([
+      const [nameResult, symbolResult] = await Promise.all([
         nftClient.name(),
         nftClient.symbol(),
       ]);
@@ -70,8 +70,8 @@ export async function fetchNftCollections(
       collections.push({
         contractId,
         issuer: info.issuer,
-        name: nameStr.result.toString(), // Convert ScVal/String to JS string
-        symbol: symbolStr.result.toString(), // Convert ScVal/String to JS string
+        name: unwrapResult(nameResult.result, 'name'), // Convert ScVal/String to JS string
+        symbol: unwrapResult(symbolResult.result, 'symbol'), // Convert ScVal/String to JS string
       });
     } catch (error) {
       console.error(`Failed to load details for ${contractId}`, error);
