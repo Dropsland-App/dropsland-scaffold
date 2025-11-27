@@ -93,30 +93,31 @@ export const CreateTokenForm: React.FC<{
     platformFee: 10,
   });
 
-  // Strictly sync artistName with profile.username
+  // FIX 1: Prevent infinite loop by checking if the value actually changed
   useEffect(() => {
-    if (profile?.username) {
+    if (profile?.username && formData.artistName !== profile.username) {
       setFormData((prev) => ({
         ...prev,
-        artistName: profile.username, // Always overwrite with profile name
+        artistName: profile.username,
       }));
     }
-  }, [profile]);
+  }, [profile, formData.artistName]);
 
   useEffect(() => {
     if (!visible) {
       reset();
-      setFormData({
-        artistName: profile?.username || "", // Reset to profile name if available
+      setFormData((prev) => ({
+        ...prev,
+        artistName: profile?.username || "",
         tokenCode: "",
         tokenName: "",
         description: "",
         totalSupply: "1000000000",
         platformFee: 10,
-      });
+      }));
       setSelectedTier("PREMIUM");
     }
-  }, [visible, profile, reset]); // Added profile dependency
+  }, [visible, profile, reset]);
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -246,13 +247,14 @@ export const CreateTokenForm: React.FC<{
               </div>
             </div>
             <DialogFooter>
+              {/* FIX 2: Correct onClick handler syntax */}
               {!address ? (
-                <Button onClick={void connectWallet} className="w-full">
+                <Button onClick={() => void connectWallet()} className="w-full">
                   Connect Wallet
                 </Button>
               ) : (
                 <Button
-                  onClick={void handleSubmit}
+                  onClick={() => void handleSubmit()}
                   className="w-full"
                   disabled={
                     !formData.artistName ||

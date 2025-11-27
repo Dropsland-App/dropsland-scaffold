@@ -103,11 +103,11 @@ export function useTokenCreation() {
     [address, signTransaction],
   );
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setStage("IDLE");
     setError(null);
     setResult(null);
-  };
+  }, []);
 
   return { stage, error, result, createToken, reset };
 }
