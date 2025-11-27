@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { useTokenCreation, CreationStage } from "../hooks/useTokenCreation";
 import { useWallet } from "../hooks/useWallet";
 import { connectWallet } from "../util/wallet";
+import { useProfile } from "../hooks/useProfile";
 
 const FEE_TIERS = {
   BASIC: {
@@ -29,7 +30,8 @@ const FEE_TIERS = {
     platformFee: 10,
     description: "Popular choice",
     color: "border-slate-700/50 bg-slate-900/30",
-    selectedColor: "border-purple-500 bg-purple-950/50 ring-2 ring-purple-500/50",
+    selectedColor:
+      "border-purple-500 bg-purple-950/50 ring-2 ring-purple-500/50",
     accentColor: "text-purple-400",
   },
   VIP: {
@@ -61,7 +63,9 @@ const LoadingView = ({ stage }: { stage: CreationStage }) => {
       )}
       <div className="text-center">
         <h3 className="text-xl font-bold text-white mb-2">
-          {stage === "WAITING_FOR_SIGNATURE" ? "Signature Required" : "Creating Token"}
+          {stage === "WAITING_FOR_SIGNATURE"
+            ? "Signature Required"
+            : "Creating Token"}
         </h3>
         <p className="text-muted-foreground">
           {messages[stage as keyof typeof messages] || "Processing..."}
@@ -71,9 +75,13 @@ const LoadingView = ({ stage }: { stage: CreationStage }) => {
   );
 };
 
-export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+export const CreateTokenForm: React.FC<{
+  visible: boolean;
+  onClose: () => void;
+}> = ({ visible, onClose }) => {
   const { address } = useWallet();
   const { stage, error, result, createToken, reset } = useTokenCreation();
+  const { profile } = useProfile();
   const [selectedTier, setSelectedTier] = useState<FeeTierType>("PREMIUM");
 
   const [formData, setFormData] = useState({
@@ -85,11 +93,21 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
     platformFee: 10,
   });
 
+  // Strictly sync artistName with profile.username
+  useEffect(() => {
+    if (profile?.username) {
+      setFormData((prev) => ({
+        ...prev,
+        artistName: profile.username, // Always overwrite with profile name
+      }));
+    }
+  }, [profile]);
+
   useEffect(() => {
     if (!visible) {
       reset();
       setFormData({
-        artistName: "",
+        artistName: profile?.username || "", // Reset to profile name if available
         tokenCode: "",
         tokenName: "",
         description: "",
@@ -98,7 +116,7 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
       });
       setSelectedTier("PREMIUM");
     }
-  }, [visible]);
+  }, [visible, profile, reset]); // Added profile dependency
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -119,10 +137,13 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
           <div className="text-center py-6 space-y-6">
             <div className="text-6xl">🎉</div>
             <DialogHeader>
-              <DialogTitle className="text-center text-2xl">Token Live!</DialogTitle>
+              <DialogTitle className="text-center text-2xl">
+                Token Live!
+              </DialogTitle>
             </DialogHeader>
             <p className="text-muted-foreground">
-              Your token <strong>{result?.tokenCode}</strong> has been minted and distributed.
+              Your token <strong>{result?.tokenCode}</strong> has been minted
+              and distributed.
             </p>
             <Button onClick={handleClose} className="w-full">
               Done
@@ -130,7 +151,9 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
           </div>
         )}
 
-        {stage !== "IDLE" && stage !== "SUCCESS" && stage !== "ERROR" && <LoadingView stage={stage} />}
+        {stage !== "IDLE" && stage !== "SUCCESS" && stage !== "ERROR" && (
+          <LoadingView stage={stage} />
+        )}
 
         {stage === "ERROR" && (
           <div className="py-6 space-y-4">
@@ -151,11 +174,9 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Artist Name</Label>
-                <Input
-                  value={formData.artistName}
-                  onChange={(e) => setFormData({ ...formData, artistName: e.target.value })}
-                  placeholder="e.g. DJ Solar"
-                />
+                <div className="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 text-foreground font-medium items-center">
+                  {formData.artistName || "Loading..."}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -179,7 +200,9 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
                   <Label>Token Name</Label>
                   <Input
                     value={formData.tokenName}
-                    onChange={(e) => setFormData({ ...formData, tokenName: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tokenName: e.target.value })
+                    }
                     placeholder="Solar Energy"
                   />
                 </div>
@@ -188,7 +211,9 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
                 <Label>Description</Label>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Describe your token..."
                   rows={2}
                 />
@@ -201,12 +226,16 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
                     type="button"
                     onClick={() => setSelectedTier(tier)}
                     className={`p-2 border rounded-lg text-center text-xs transition-all ${
-                      selectedTier === tier ? FEE_TIERS[tier].selectedColor : FEE_TIERS[tier].color
+                      selectedTier === tier
+                        ? FEE_TIERS[tier].selectedColor
+                        : FEE_TIERS[tier].color
                     }`}
                   >
                     <div
                       className={`font-bold ${
-                        selectedTier === tier ? FEE_TIERS[tier].accentColor : "text-foreground"
+                        selectedTier === tier
+                          ? FEE_TIERS[tier].accentColor
+                          : "text-foreground"
                       }`}
                     >
                       {tier}
@@ -218,14 +247,18 @@ export const CreateTokenForm: React.FC<{ visible: boolean; onClose: () => void }
             </div>
             <DialogFooter>
               {!address ? (
-                <Button onClick={connectWallet} className="w-full">
+                <Button onClick={void connectWallet} className="w-full">
                   Connect Wallet
                 </Button>
               ) : (
                 <Button
-                  onClick={handleSubmit}
+                  onClick={void handleSubmit}
                   className="w-full"
-                  disabled={!formData.artistName || !formData.tokenCode || !formData.tokenName}
+                  disabled={
+                    !formData.artistName ||
+                    !formData.tokenCode ||
+                    !formData.tokenName
+                  }
                 >
                   Launch Token
                 </Button>

@@ -8,7 +8,10 @@ import {
   submitSignedTransaction,
   executeDistribution,
 } from "../services/tokenCreation";
-import type { TokenCreationFormData } from "../types/tokenCreation";
+import type {
+  TokenCreationFormData,
+  TokenCreationResult,
+} from "../types/tokenCreation";
 
 export type CreationStage =
   | "IDLE"
@@ -23,7 +26,7 @@ export function useTokenCreation() {
   const { address, signTransaction } = useWallet();
   const [stage, setStage] = useState<CreationStage>("IDLE");
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<TokenCreationResult | null>(null);
 
   const waitForTrustline = async (tokenCode: string, issuer: string) => {
     const maxAttempts = 30;
@@ -91,9 +94,9 @@ export function useTokenCreation() {
 
         setResult({ ...distRes, tokenCode: formData.tokenCode.toUpperCase() });
         setStage("SUCCESS");
-      } catch (e: any) {
+      } catch (e) {
         console.error(e);
-        setError(e.message || "Unknown error occurred");
+        setError(e instanceof Error ? e.message : "Unknown error occurred");
         setStage("ERROR");
       }
     },

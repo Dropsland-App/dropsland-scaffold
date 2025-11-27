@@ -79,3 +79,7 @@ export interface TokenCreationFormData {
   description: string;
   platformFee: number; // percentage (10 = 10%)
 }
+
+export type TokenCreationResult = DistributionResponse & {
+  tokenCode: string;
+};
