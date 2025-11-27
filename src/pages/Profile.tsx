@@ -26,6 +26,10 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { fetchTracks } from "../services/music";
+import { TrackCard } from "../components/music/TrackCard";
+import { Upload } from "lucide-react";
 
 // --- Components ---
 
@@ -138,6 +142,14 @@ const Profile: React.FC = () => {
   const { address } = useWallet();
   const { profile } = useProfile();
 
+  // 1. FETCH ARTIST TRACKS
+  // We use the 'address' prop or the current wallet address
+  const { data: artistTracks } = useQuery({
+    queryKey: ["artistTracks", address],
+    queryFn: () => fetchTracks(address),
+    enabled: !!address,
+  });
+
   // Modal States
   const [isNftFormVisible, setIsNftFormVisible] = useState(false);
   const [isTokenFormVisible, setIsTokenFormVisible] = useState(false);
@@ -165,6 +177,9 @@ const Profile: React.FC = () => {
         <TabsList className="bg-background/50 border border-border/40 p-1 h-auto">
           <TabsTrigger value="overview" className="px-6 py-2">
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="music" className="px-6 py-2">
+            Music
           </TabsTrigger>
           {profileType === "DJ" ? (
             <>
@@ -258,6 +273,36 @@ const Profile: React.FC = () => {
                 </Button>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* --- MUSIC TAB --- */}
+        <TabsContent value="music" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Discography</h2>
+            {profileType === "DJ" && (
+              <Button variant="outline">
+                <Upload className="w-4 h-4 mr-2" /> Upload Track
+              </Button>
+            )}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {artistTracks?.map((track) => (
+              <TrackCard
+                key={track.id}
+                track={track}
+                onUnlockRequest={() => {
+                  // For now, just log it. In a real app, you might want to open a dialog.
+                  console.log("Unlock requested for", track.title);
+                }}
+              />
+            ))}
+            {artistTracks?.length === 0 && (
+              <div className="col-span-2 text-center py-10 text-muted-foreground border border-dashed border-border/40 rounded-xl">
+                No tracks found.
+              </div>
+            )}
           </div>
         </TabsContent>
 

@@ -10,6 +10,8 @@ import Activity from "./pages/Activity.tsx";
 import Profile from "./pages/Profile.tsx";
 import { OnboardingModal } from "./components/OnboardingModal.tsx";
 
+import { GlobalPlayer } from "./components/music/GlobalPlayer.tsx";
+
 const MainLayout: React.FC = () => (
   <div className="flex min-h-screen flex-col bg-[#030712] text-foreground">
     <OnboardingModal />
@@ -17,6 +19,7 @@ const MainLayout: React.FC = () => (
     <main className="flex-1 pb-24">
       <Outlet />
     </main>
+    <GlobalPlayer />
     <footer className="border-t border-border/40 bg-background/80">
       <div className="container mx-auto flex flex-col gap-2 py-6 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between px-4">
         <p>© {new Date().getFullYear()} Dropsland. All rights reserved.</p>

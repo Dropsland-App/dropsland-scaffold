@@ -69,9 +69,21 @@ const MOCK_FEED: HomeFeedPost[] = [
   },
 ];
 
+import { fetchTracks } from "../services/music";
+import { TrackCard } from "../components/music/TrackCard";
+import type { Track } from "../types/music";
+
+// ... existing imports
+
 const ScaffoldHome: React.FC = () => {
   const { profileType } = useProfileType();
   const navigate = useNavigate();
+
+  // 1. FETCH REAL TRACKS 🎵
+  const { data: realTracks, isLoading: tracksLoading } = useQuery({
+    queryKey: ["publicTracks"],
+    queryFn: () => fetchTracks(), // Fetches all latest tracks
+  });
 
   // Fetch suggested artists (Real data from Factory/DB)
   const { data: suggestedData, isLoading: isLoadingSuggestions } = useQuery({
@@ -100,6 +112,21 @@ const ScaffoldHome: React.FC = () => {
     });
   };
 
+  // Handle "Unlock" click on a locked TrackCard
+  const handleUnlockRequest = (track: Track) => {
+    if (track.required_token_id && track.artist_tokens) {
+      // It's gated by a Token -> Open Buy Dialog
+      setBuyDialogState({
+        open: true,
+        symbol: track.artist_tokens.token_code,
+        issuer: track.artist_tokens.artist_public_key,
+      });
+    } else if (track.required_reward_id) {
+      // It's gated by an NFT -> You might want to open the RewardsDialog or a specific NFT page
+      console.log("NFT required:", track.rewards?.title);
+    }
+  };
+
   return (
     <div className="container max-w-5xl mx-auto px-4 py-6 min-h-screen">
       {/* 1. Mobile/Header Search & Discovery */}
@@ -110,6 +137,33 @@ const ScaffoldHome: React.FC = () => {
             placeholder="What do you want to listen to?"
             className="pl-10 bg-background/50 border-border/40 rounded-full"
           />
+        </div>
+
+        {/* NEW: FRESH DROPS SECTION 🎵 */}
+        <div className="mb-2">
+          <h2 className="text-xl font-bold text-foreground mb-4">
+            Fresh Drops
+          </h2>
+
+          {tracksLoading ? (
+            <div className="text-sm text-muted-foreground">
+              Loading beats...
+            </div>
+          ) : realTracks?.length === 0 ? (
+            <div className="p-6 border border-dashed border-border/40 rounded-xl text-center text-muted-foreground">
+              No tracks uploaded yet. Be the first DJ to drop!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {realTracks?.map((track) => (
+                <TrackCard
+                  key={track.id}
+                  track={track}
+                  onUnlockRequest={handleUnlockRequest}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Trending Section */}

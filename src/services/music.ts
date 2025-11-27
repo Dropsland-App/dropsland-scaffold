@@ -12,7 +12,7 @@ export async function fetchTracks(artistPublicKey?: string): Promise<Track[]> {
     .select(
       `
       *,
-      artist_tokens:required_token_id (token_code, token_name),
+      artist_tokens:required_token_id (token_code, token_name, artist_public_key),
       rewards:required_reward_id (title)
     `,
     )

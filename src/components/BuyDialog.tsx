@@ -41,7 +41,7 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
   } = useBuyFlow(visible, tokenIssuer, tokenSymbol);
 
   const handleClose = () => {
-    if (!isSubmitting && !isSuccess) {
+    if (!isSubmitting) {
       onClose();
     }
   };
