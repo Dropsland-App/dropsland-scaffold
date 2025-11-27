@@ -18,6 +18,7 @@ import { connectWallet } from "../util/wallet";
 import { useTokenCreation } from "../hooks/useTokenCreation";
 import type { TokenCreationFormData } from "../types/tokenCreation";
 import { stellarNetwork } from "../contracts/util";
+import { useProfile } from "../hooks/useProfile";
 
 interface CreateTokenFormProps {
   visible: boolean;
@@ -87,6 +88,8 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
     goToStep,
   } = useTokenCreation();
 
+  const { profile, isLoading: profileLoading } = useProfile();
+
   const [formData, setFormData] = useState<TokenCreationFormData>({
     artistName: "",
     tokenCode: "",
@@ -105,6 +108,13 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       platformFee: FEE_TIERS[selectedTier].platformFee,
     }));
   }, [selectedTier]);
+
+  // Pre-fill artist name when profile loads
+  useEffect(() => {
+    if (profile?.username) {
+      setFormData((prev) => ({ ...prev, artistName: profile.username }));
+    }
+  }, [profile]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -180,9 +190,12 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       return;
     }
 
+    // Use profile name directly as fallback
+    const effectiveArtistName = formData.artistName || profile?.username || "";
+
     // Validate form
     if (
-      !formData.artistName.trim() ||
+      !effectiveArtistName.trim() ||
       !formData.tokenCode.trim() ||
       !formData.tokenName.trim()
     ) {
@@ -205,7 +218,10 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
 
     console.log("All validations passed, calling handlePrepareToken");
     // handlePrepareToken will set loading and move to step 3
-    await handlePrepareToken(formData);
+    await handlePrepareToken({
+      ...formData,
+      artistName: effectiveArtistName,
+    });
   };
 
   const getStellarExplorerUrl = (hash: string) => {
@@ -268,6 +284,8 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                   </p>
                 </div>
               </div>
+            ) : profileLoading ? (
+              <div className="text-center py-4">Loading profile...</div>
             ) : (
               <>
                 <div className="text-center space-y-2">
@@ -304,13 +322,10 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                     <Input
                       id="artistName"
                       type="text"
-                      value={formData.artistName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, artistName: e.target.value })
-                      }
-                      placeholder="e.g. DJ Solar"
-                      disabled={state.loading}
-                      required
+                      value={formData.artistName || profile?.username || ""}
+                      disabled={true}
+                      className="bg-muted text-muted-foreground"
+                      readOnly
                     />
                   </div>
 
