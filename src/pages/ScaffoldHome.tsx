@@ -1,132 +1,224 @@
 import React, { useState } from "react";
-import { useProfileType } from "../hooks/useProfileType";
-import { CreateTokenForm } from "../components/CreateTokenForm";
+import { TrendingArtists } from "../components/feed/TrendingArtists";
+import { FeedCard, type FeedPost } from "../components/feed/FeedCard";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useProfileType } from "../hooks/useProfileType";
+import { BuyDialog } from "../components/BuyDialog";
 
-const fanHighlights = [
+// Mock Data for the Feed
+const MOCK_FEED: FeedPost[] = [
   {
-    title: "Direct Connection",
-    body: "Support artists without intermediaries and unlock conversations, perks, and gated drops built entirely on-chain.",
+    id: "1",
+    artistName: "DJ Solar",
+    artistHandle: "djsolar",
+    artistAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Solar",
+    timestamp: "2h ago",
+    type: "token_launch",
+    content:
+      "My official artist token $SOLAR is finally live! Holders get access to my unreleased folders and VIP tickets for the Summer Tour. Let's build this economy together. 🌞",
+    stats: { likes: 1240, comments: 85 },
+    actionLabel: "Buy $SOLAR",
   },
   {
-    title: "Exclusive Access",
-    body: "Collect NFTs that unlock early track debuts, private listening sessions, and IRL event invites.",
+    id: "2",
+    artistName: "Neon Pulse",
+    artistHandle: "neonpulse",
+    artistAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neon",
+    timestamp: "5h ago",
+    type: "nft_drop",
+    content:
+      "Dropping 50 'Genesis' Merch Passes. Owning one means you get a physical hoodie + lifetime guest list access.",
+    image:
+      "https://images.unsplash.com/photo-1576158187551-b3846f756510?q=80&w=2940&auto=format&fit=crop",
+    stats: { likes: 892, comments: 45 },
+    actionLabel: "Mint Pass (50 XLM)",
   },
   {
-    title: "True Ownership",
-    body: "Every collectible and token lives on Stellar—portable, transparent, and always yours.",
-  },
-  {
-    title: "Community Power",
-    body: "Join artist-led economies where fans help shape releases, perks, and experiences.",
+    id: "3",
+    artistName: "Bass Mint",
+    artistHandle: "bassmint",
+    artistAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bass",
+    timestamp: "1d ago",
+    type: "update",
+    content:
+      "Just uploaded the studio session from last night. Token holders can stream it now in the 'Exclusive' tab.",
+    image:
+      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2000&auto=format&fit=crop",
+    stats: { likes: 2100, comments: 312 },
   },
 ];
 
-const Home: React.FC = () => {
+const ScaffoldHome: React.FC = () => {
   const { profileType } = useProfileType();
-  const [showCreateTokenForm, setShowCreateTokenForm] = useState(false);
+
+  // State for interactions
+  const [buyDialogState, setBuyDialogState] = useState<{
+    open: boolean;
+    symbol: string;
+    issuer: string;
+  }>({
+    open: false,
+    symbol: "",
+    issuer: "",
+  });
+
+  const handleBuyClick = (post: FeedPost) => {
+    // In a real app, post would contain the token details
+    if (post.type === "token_launch") {
+      setBuyDialogState({
+        open: true,
+        symbol: "SOLAR",
+        issuer: "G...MOCK_ISSUER", // Replace with real data logic later
+      });
+    }
+  };
 
   return (
-    <div className="container mx-auto space-y-12 px-4 py-10">
-      <section className="space-y-4">
-        <p className="text-sm font-semibold uppercase tracking-[0.35em] text-amber-300">
-          Where Music Meets Ownership
-        </p>
-        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-          Welcome to Dropsland
-        </h1>
-        <p className="text-lg text-muted-foreground sm:text-xl">
-          Dropsland is a Web3 playground where DJs spin up tokens, fans collect
-          cultural artifacts, and communities share in the upside. Everything is
-          powered by open, global Stellar rails.
-        </p>
-        <p className="text-muted-foreground">
-          Mint a token, drop an exclusive mix, or unlock gated perks—all without
-          waiting on a platform roadmap. You own the moment.
-        </p>
-      </section>
+    <div className="container max-w-5xl mx-auto px-4 py-6 min-h-screen">
+      {/* 1. Mobile/Header Search & Discovery */}
+      <div className="flex flex-col gap-6 mb-8">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="What do you want to listen to?"
+            className="pl-10 bg-background/50 border-border/40 rounded-full"
+          />
+        </div>
 
-      {profileType === "DJ" ? (
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">
-              DJ Command Center
-            </h2>
-            <p className="mt-2 max-w-2xl text-muted-foreground">
-              Launch your social token, gate experiences with NFTs, and keep all
-              the context in one Stellar-native dashboard.
-            </p>
-          </div>
-          <Card className="bg-background/70 border-border/60">
-            <CardHeader>
-              <CardTitle>Spin up your token in minutes</CardTitle>
-              <CardDescription>
-                Choose an asset code, deploy a SAC contract, and start inviting
-                your community. No Solidity. No gatekeepers.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                <li>Share drops, perks, or merch with token holders.</li>
-                <li>Reward superfans with tiered access and experiences.</li>
-                <li>
-                  Broadcast updates across Dropsland, social, and IRL moments.
-                </li>
-              </ul>
-              <Button
-                onClick={() => setShowCreateTokenForm(true)}
-                className="w-full sm:w-auto"
-              >
-                Create Your Token
+        {/* Trending Section (Stories Style) */}
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
+            Trending Creators
+          </h2>
+          <TrendingArtists />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* 2. Main Feed (Left Column on Desktop) */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-foreground">Your Feed</h1>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" className="text-primary">
+                All
               </Button>
-            </CardContent>
-          </Card>
-        </section>
-      ) : (
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">
-              Discover Artists & Communities
-            </h2>
-            <p className="mt-2 max-w-2xl text-muted-foreground">
-              Collect exclusive drops, hop into token-gated chats, and follow
-              the artists defining next season&apos;s sound.
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {fanHighlights.map((item) => (
-              <Card
-                key={item.title}
-                className="border-border/50 bg-linear-to-b from-background/70 to-background/40"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
               >
-                <CardHeader className="px-5">
-                  <CardTitle className="text-lg text-amber-200">
-                    {item.title}
-                  </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    {item.body}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
+                Music
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+              >
+                Collectibles
+              </Button>
+            </div>
           </div>
-        </section>
-      )}
 
-      {/* Create Token Form */}
-      <CreateTokenForm
-        visible={showCreateTokenForm}
-        onClose={() => setShowCreateTokenForm(false)}
+          {MOCK_FEED.map((post) => (
+            <FeedCard
+              key={post.id}
+              post={{
+                ...post,
+                onAction: () => handleBuyClick(post),
+              }}
+            />
+          ))}
+
+          <div className="py-8 text-center text-muted-foreground">
+            <p>You're all caught up!</p>
+            <Button variant="link" className="text-primary">
+              Discover more artists
+            </Button>
+          </div>
+        </div>
+
+        {/* 3. Sidebar (Right Column on Desktop - Hidden on Mobile) */}
+        <div className="hidden lg:block lg:col-span-4 space-y-6">
+          {/* Action Card based on Profile Type */}
+          <div className="sticky top-24 space-y-6">
+            {profileType === "DJ" ? (
+              <div className="rounded-xl bg-linear-to-br from-primary/20 to-background border border-primary/20 p-5">
+                <h3 className="font-bold text-lg mb-2 text-primary">
+                  DJ Dashboard
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Your token $SOLAR is trending! Activity is up 40% this week.
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-background/50 p-3 rounded-lg text-center">
+                    <span className="block text-2xl font-bold">1.2k</span>
+                    <span className="text-[10px] uppercase text-muted-foreground">
+                      Holders
+                    </span>
+                  </div>
+                  <div className="bg-background/50 p-3 rounded-lg text-center">
+                    <span className="block text-2xl font-bold">4.5k</span>
+                    <span className="text-[10px] uppercase text-muted-foreground">
+                      Volume
+                    </span>
+                  </div>
+                </div>
+                <Button className="w-full font-bold" variant="default">
+                  Go to Profile Manager
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-muted/30 border border-border/50 p-5">
+                <h3 className="font-bold text-lg mb-2">
+                  Complete your collection
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You need 2 more tokens to unlock "VIP Status" with Neon Pulse.
+                </p>
+                <Button className="w-full" variant="outline">
+                  View Wallet
+                </Button>
+              </div>
+            )}
+
+            {/* Suggested Follows */}
+            <div className="rounded-xl border border-border/40 bg-background/40 p-5">
+              <h3 className="font-semibold text-foreground mb-4">
+                Suggested for you
+              </h3>
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                      <div className="space-y-1">
+                        <div className="h-3 w-20 bg-muted rounded animate-pulse" />
+                        <div className="h-2 w-12 bg-muted rounded animate-pulse" />
+                      </div>
+                    </div>
+                    <Button size="sm" variant="ghost" className="h-8 text-xs">
+                      Follow
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Global Dialogs */}
+      <BuyDialog
+        visible={buyDialogState.open}
+        onClose={() => setBuyDialogState((prev) => ({ ...prev, open: false }))}
+        tokenSymbol={buyDialogState.symbol}
+        tokenIssuer={buyDialogState.issuer}
       />
     </div>
   );
 };
 
-export default Home;
+export default ScaffoldHome;
