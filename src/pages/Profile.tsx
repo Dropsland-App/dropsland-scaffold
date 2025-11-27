@@ -47,7 +47,7 @@ const ProfileHeader = ({
     <div className="relative mb-8">
       {/* Cover Image Placeholder */}
       <div
-        className={`h-48 w-full rounded-xl bg-gradient-to-b ${coverGradient} border border-white/5`}
+        className={`h-48 w-full rounded-xl bg-linear-to-b ${coverGradient} border border-white/5`}
       >
         <div className="absolute top-4 right-4 flex gap-2">
           <Button
@@ -194,7 +194,7 @@ const Profile: React.FC = () => {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Quick Stats Cards */}
-            <Card className="bg-gradient-to-br from-background to-muted/20 border-border/40">
+            <Card className="bg-linear-to-br from-background to-muted/20 border-border/40">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {profileType === "DJ" ? "Total Revenue" : "Portfolio Value"}
@@ -209,7 +209,7 @@ const Profile: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-background to-muted/20 border-border/40">
+            <Card className="bg-linear-to-br from-background to-muted/20 border-border/40">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {profileType === "DJ"
@@ -307,7 +307,7 @@ const Profile: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {/* Example Collection Card */}
             <Card className="group overflow-hidden border-border/40 bg-background/60 hover:border-primary/50 transition-colors cursor-pointer">
-              <div className="h-32 bg-gradient-to-r from-purple-500/20 to-blue-500/20 group-hover:from-purple-500/30 group-hover:to-blue-500/30 transition-colors" />
+              <div className="h-32 bg-linear-to-r from-purple-500/20 to-blue-500/20 group-hover:from-purple-500/30 group-hover:to-blue-500/30 transition-colors" />
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>

@@ -46,17 +46,17 @@ export const TrendingArtists: React.FC = () => {
         {trending.map((artist) => (
           <div
             key={artist.id}
-            className="flex flex-col items-center gap-2 min-w-[80px] cursor-pointer group"
+            className="flex flex-col items-center gap-2 min-w-20 cursor-pointer group"
           >
             <div className="relative">
-              <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-pink-500 to-amber-500 opacity-75 group-hover:opacity-100 transition-opacity blur-[2px]" />
+              <div className="absolute -inset-0.5 rounded-full bg-linear-to-r from-pink-500 to-amber-500 opacity-75 group-hover:opacity-100 transition-opacity blur-[2px]" />
               <Avatar className="h-16 w-16 border-2 border-background relative">
                 <AvatarImage src={artist.image} />
                 <AvatarFallback>{artist.name[0]}</AvatarFallback>
               </Avatar>
             </div>
             <div className="text-center">
-              <p className="text-xs font-medium text-foreground truncate max-w-[80px]">
+              <p className="text-xs font-medium text-foreground truncate max-w-20">
                 {artist.name}
               </p>
               <p className="text-[10px] text-muted-foreground">
