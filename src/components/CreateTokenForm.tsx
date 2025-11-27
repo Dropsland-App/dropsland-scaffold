@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,40 +11,14 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Alert, AlertDescription } from "./ui/alert";
-import { useTokenCreation, CreationStage } from "../hooks/useTokenCreation";
+import { CreationStage } from "../hooks/useTokenCreation";
 import { useWallet } from "../hooks/useWallet";
 import { connectWallet } from "../util/wallet";
-import { useProfile } from "../hooks/useProfile";
-
-const FEE_TIERS = {
-  BASIC: {
-    name: "BASIC",
-    platformFee: 5,
-    description: "Standard tier",
-    color: "border-slate-700/50 bg-slate-900/30",
-    selectedColor: "border-blue-500 bg-blue-950/50 ring-2 ring-blue-500/50",
-    accentColor: "text-blue-400",
-  },
-  PREMIUM: {
-    name: "PREMIUM",
-    platformFee: 10,
-    description: "Popular choice",
-    color: "border-slate-700/50 bg-slate-900/30",
-    selectedColor:
-      "border-purple-500 bg-purple-950/50 ring-2 ring-purple-500/50",
-    accentColor: "text-purple-400",
-  },
-  VIP: {
-    name: "VIP",
-    platformFee: 15,
-    description: "Premium support",
-    color: "border-slate-700/50 bg-slate-900/30",
-    selectedColor: "border-amber-500 bg-amber-950/50 ring-2 ring-amber-500/50",
-    accentColor: "text-amber-400",
-  },
-} as const;
-
-type FeeTierType = keyof typeof FEE_TIERS;
+import {
+  useCreateTokenForm,
+  FEE_TIERS,
+  FeeTierType,
+} from "../hooks/useCreateTokenForm";
 
 const LoadingView = ({ stage }: { stage: CreationStage }) => {
   const messages = {
@@ -80,53 +54,19 @@ export const CreateTokenForm: React.FC<{
   onClose: () => void;
 }> = ({ visible, onClose }) => {
   const { address } = useWallet();
-  const { stage, error, result, createToken, reset } = useTokenCreation();
-  const { profile } = useProfile();
-  const [selectedTier, setSelectedTier] = useState<FeeTierType>("PREMIUM");
+  const {
+    formData,
+    updateField,
+    handleTokenCodeChange,
+    selectedTier,
+    setSelectedTier,
+    handleSubmit,
+    stage,
+    error,
+    result,
+    reset,
+  } = useCreateTokenForm(visible);
 
-  const [formData, setFormData] = useState({
-    artistName: "",
-    tokenCode: "",
-    tokenName: "",
-    description: "",
-    totalSupply: "1000000000",
-    platformFee: 10,
-  });
-
-  // FIX 1: Prevent infinite loop by checking if the value actually changed
-  useEffect(() => {
-    if (profile?.username && formData.artistName !== profile.username) {
-      setFormData((prev) => ({
-        ...prev,
-        artistName: profile.username,
-      }));
-    }
-  }, [profile, formData.artistName]);
-
-  useEffect(() => {
-    if (!visible) {
-      reset();
-      setFormData((prev) => ({
-        ...prev,
-        artistName: profile?.username || "",
-        tokenCode: "",
-        tokenName: "",
-        description: "",
-        totalSupply: "1000000000",
-        platformFee: 10,
-      }));
-      setSelectedTier("PREMIUM");
-    }
-  }, [visible, profile, reset]);
-
-  useEffect(() => {
-    setFormData((prev) => ({
-      ...prev,
-      platformFee: FEE_TIERS[selectedTier].platformFee,
-    }));
-  }, [selectedTier]);
-
-  const handleSubmit = () => createToken(formData);
   const handleClose = () => {
     if (stage === "IDLE" || stage === "SUCCESS" || stage === "ERROR") onClose();
   };
@@ -184,15 +124,7 @@ export const CreateTokenForm: React.FC<{
                   <Label>Token Symbol</Label>
                   <Input
                     value={formData.tokenCode}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        tokenCode: e.target.value
-                          .toUpperCase()
-                          .replace(/[^A-Z0-9]/g, "")
-                          .slice(0, 12),
-                      })
-                    }
+                    onChange={(e) => handleTokenCodeChange(e.target.value)}
                     placeholder="SOLAR"
                     maxLength={12}
                   />
@@ -201,9 +133,7 @@ export const CreateTokenForm: React.FC<{
                   <Label>Token Name</Label>
                   <Input
                     value={formData.tokenName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, tokenName: e.target.value })
-                    }
+                    onChange={(e) => updateField("tokenName", e.target.value)}
                     placeholder="Solar Energy"
                   />
                 </div>
@@ -212,9 +142,7 @@ export const CreateTokenForm: React.FC<{
                 <Label>Description</Label>
                 <Textarea
                   value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
+                  onChange={(e) => updateField("description", e.target.value)}
                   placeholder="Describe your token..."
                   rows={2}
                 />
@@ -247,7 +175,6 @@ export const CreateTokenForm: React.FC<{
               </div>
             </div>
             <DialogFooter>
-              {/* FIX 2: Correct onClick handler syntax */}
               {!address ? (
                 <Button onClick={() => void connectWallet()} className="w-full">
                   Connect Wallet

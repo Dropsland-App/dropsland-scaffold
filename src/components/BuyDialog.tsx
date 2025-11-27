@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -11,9 +11,9 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Alert, AlertDescription } from "./ui/alert";
-import { useBuyToken } from "../hooks/useBuyToken";
-import { useWallet } from "../hooks/useWallet";
 import { ArrowDown, Loader2 } from "lucide-react";
+import { useBuyFlow } from "../hooks/useBuyFlow";
+import { useWallet } from "../hooks/useWallet";
 
 interface BuyDialogProps {
   visible: boolean;
@@ -30,98 +30,23 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
 }) => {
   const { address } = useWallet();
   const {
-    buyToken,
-    loading: buyLoading,
-    error: buyError,
+    amount,
+    setAmount,
+    isSubmitting,
     checkingTrustline,
-  } = useBuyToken();
-
-  const [amount, setAmount] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState("");
-  const [transactionUrl, setTransactionUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!visible) {
-      setAmount("");
-      setIsSubmitting(false);
-      setIsSuccess(false);
-      setError("");
-      setTransactionUrl(null);
-    }
-  }, [visible]);
-
-  // Update error from buy hook
-  useEffect(() => {
-    if (buyError) {
-      setError(buyError);
-    }
-  }, [buyError]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!address) {
-      setError("Please connect your wallet first");
-      return;
-    }
-
-    if (!tokenIssuer) {
-      setError("Token issuer is required");
-      return;
-    }
-
-    const amountNum = parseFloat(amount);
-    if (!amount || isNaN(amountNum) || amountNum <= 0) {
-      setError("Please enter a valid amount");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      // 1:1 Rate, so amount XLM = amount Token
-      const xlmToSpend = amountNum;
-
-      const result = await buyToken({
-        tokenCode: tokenSymbol,
-        tokenIssuer: tokenIssuer,
-        amountXlm: xlmToSpend.toFixed(7),
-        buyerPublicKey: address,
-      });
-
-      setTransactionUrl(result.transactionUrl);
-      setIsSuccess(true);
-
-      setTimeout(() => {
-        setAmount("");
-        setIsSuccess(false);
-        setIsSubmitting(false);
-        setTransactionUrl(null);
-        onClose();
-      }, 3000);
-    } catch (error) {
-      console.error("❌ Error purchasing token:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Purchase failed.";
-      setError(errorMessage);
-      setIsSubmitting(false);
-      setIsSuccess(false);
-    }
-  };
+    isSuccess,
+    error,
+    transactionUrl,
+    executePurchase,
+  } = useBuyFlow(visible, tokenIssuer, tokenSymbol);
 
   const handleClose = () => {
     if (!isSubmitting && !isSuccess) {
-      setAmount("");
-      setError("");
       onClose();
     }
   };
 
-  const isLoading = isSubmitting || buyLoading || checkingTrustline;
+  const isLoading = isSubmitting || checkingTrustline;
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && handleClose()}>
@@ -161,7 +86,8 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
 
             <form
               onSubmit={(e) => {
-                void handleSubmit(e);
+                e.preventDefault();
+                void executePurchase();
               }}
               className="space-y-6"
             >
@@ -179,7 +105,6 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
                       value={amount}
                       onChange={(e) => {
                         setAmount(e.target.value);
-                        setError("");
                       }}
                       placeholder="0.00"
                       className="pr-16 text-lg h-12 bg-background/50"
@@ -218,9 +143,9 @@ export const BuyDialog: React.FC<BuyDialogProps> = ({
                 </div>
               </div>
 
-              {(error || buyError) && (
+              {error && (
                 <Alert variant="destructive">
-                  <AlertDescription>{error || buyError}</AlertDescription>
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
