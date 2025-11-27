@@ -255,7 +255,7 @@ const Explore: React.FC = () => {
                     return (
                       <Card
                         key={`token-${token.id}`}
-                        className="border-border/60 bg-gradient-to-r from-background/80 to-background/40 h-full"
+                        className="border-border/60 bg-linear-to-r from-background/80 to-background/40 h-full"
                       >
                         <CardContent className="flex flex-col gap-6 py-6 h-full">
                           <div className="flex items-center gap-4">

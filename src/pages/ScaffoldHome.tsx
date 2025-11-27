@@ -33,14 +33,6 @@ const Home: React.FC = () => {
   const { profileType } = useProfileType();
   const [showCreateTokenForm, setShowCreateTokenForm] = useState(false);
 
-  const handleTokenCreationSuccess = () => {
-    console.log("Token created successfully!");
-    // You can add additional logic here, such as:
-    // - Refreshing token list
-    // - Showing a success notification
-    // - Redirecting to token page
-  };
-
   return (
     <div className="container mx-auto space-y-12 px-4 py-10">
       <section className="space-y-4">
@@ -112,7 +104,7 @@ const Home: React.FC = () => {
             {fanHighlights.map((item) => (
               <Card
                 key={item.title}
-                className="border-border/50 bg-gradient-to-b from-background/70 to-background/40"
+                className="border-border/50 bg-linear-to-b from-background/70 to-background/40"
               >
                 <CardHeader className="px-5">
                   <CardTitle className="text-lg text-amber-200">
@@ -132,7 +124,6 @@ const Home: React.FC = () => {
       <CreateTokenForm
         visible={showCreateTokenForm}
         onClose={() => setShowCreateTokenForm(false)}
-        onSuccess={handleTokenCreationSuccess}
       />
     </div>
   );

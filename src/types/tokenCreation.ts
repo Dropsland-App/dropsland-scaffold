@@ -71,21 +71,6 @@ export interface DistributionResponse {
   message?: string;
 }
 
-export interface TokenCreationState {
-  step: number;
-  loading: boolean;
-  loadingMessage: string | null;
-  error: string | null;
-  tokenData: TokenCreationParams | null;
-  distributionAccount: string | null;
-  emissionXDR: string | null;
-  trustlineTxHash: string | null;
-  emissionTxHash: string | null;
-  distributionTxHash: string | null;
-  artistAmount: string | null;
-  platformAmount: string | null;
-}
-
 export interface TokenCreationFormData {
   artistName: string;
   tokenCode: string;
@@ -94,3 +79,7 @@ export interface TokenCreationFormData {
   description: string;
   platformFee: number; // percentage (10 = 10%)
 }
+
+export type TokenCreationResult = DistributionResponse & {
+  tokenCode: string;
+};
