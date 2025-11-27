@@ -32,6 +32,17 @@ export const useAudioStore = create<AudioState>((set, get) => {
     progress: 0,
 
     playTrack: async (track: Track) => {
+      const { currentTrack } = get();
+
+      if (currentTrack?.id === track.id) {
+        void audio.play().catch((error) => {
+          console.error("Resume failed:", error);
+          set({ isPlaying: false });
+        });
+        set({ isPlaying: true });
+        return;
+      }
+
       try {
         set({ currentTrack: track, isPlaying: true });
 
@@ -52,7 +63,7 @@ export const useAudioStore = create<AudioState>((set, get) => {
         await audio.play();
       } catch (error) {
         console.error("Playback failed:", error);
-        set({ isPlaying: false });
+        set({ isPlaying: false, currentTrack: null });
         toast.error("Playback Error", {
           description:
             error instanceof Error ? error.message : "Could not play track",

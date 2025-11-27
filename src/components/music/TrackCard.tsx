@@ -1,5 +1,5 @@
 import React from "react";
-import { Play, Lock, Loader2 } from "lucide-react";
+import { Play, Lock, Loader2, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useMusicAccess } from "../../hooks/useMusicAccess";
@@ -17,7 +17,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   track,
   onUnlockRequest,
 }) => {
-  const { playTrack, currentTrack, isPlaying } = useAudioStore();
+  const { playTrack, currentTrack, isPlaying, togglePlay } = useAudioStore();
   const access = useMusicAccess(track);
 
   const isCurrent = currentTrack?.id === track.id;
@@ -26,7 +26,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   const handleAction = () => {
     if (access.status === "unlocked") {
       if (isPlayingCurrent) {
-        // Option to pause via context if needed, or just do nothing
+        togglePlay();
       } else {
         void playTrack(track);
       }
@@ -65,7 +65,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
               ) : access.status === "locked" ? (
                 <Lock className="h-4 w-4" />
               ) : isPlayingCurrent ? (
-                <div className="h-3 w-3 bg-foreground rounded-sm animate-pulse" /> // Pause symbol equivalent
+                <Pause className="h-4 w-4 fill-current" />
               ) : (
                 <Play className="h-4 w-4 fill-current ml-0.5" />
               )}

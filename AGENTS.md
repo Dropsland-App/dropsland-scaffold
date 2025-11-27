@@ -159,6 +159,7 @@ In `useBuyToken.ts` + Supabase service.
 - Validate external data with **Zod**
 - Use generated contract types, never manual typings
 - Token amounts → always `bigint`
+- Always check that the code compiles using `tsc -b` and `npm run build`
 
 ### 5.2 Rust
 
@@ -186,6 +187,16 @@ try {
 } catch (err) {
   if (err instanceof Error) toast.error(err.message);
 }
+```
+
+### Passing callbacks as attributes
+
+You will pass callbacks that return promises with void before them, to avoid type errors, e.g.
+
+```tsx
+<Button onClick={() => void connectWallet()} className="w-full">
+  Connect Wallet
+</Button>
 ```
 
 ### Comments
