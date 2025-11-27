@@ -16,6 +16,17 @@ export interface Track {
   required_reward_id?: string; // ID of the NFT required
 
   created_at: string;
+
+  // Joined fields from Supabase
+  artist_tokens?: {
+    token_code: string;
+    token_name: string;
+    artist_public_key: string; // Assuming this is available or we use track.artist_public_key
+  };
+  rewards?: {
+    title: string;
+    nft_contract_id: string;
+  };
 }
 
 export interface StreamResponse {
