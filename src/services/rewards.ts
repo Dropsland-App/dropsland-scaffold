@@ -18,6 +18,7 @@ interface RewardErrorResponse {
 
 interface FetchRewardsOptions {
   activeOnly?: boolean;
+  artistPublicKey?: string;
 }
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL as string | undefined;
@@ -86,20 +87,22 @@ export async function createReward(
   return mapReward(data);
 }
 
-export async function fetchRewardsByArtist(
-  artistPublicKey: string,
+export async function fetchRewards(
   options: FetchRewardsOptions = {},
 ): Promise<Reward[]> {
-  requireSupabaseConfig("fetchRewardsByArtist");
+  requireSupabaseConfig("fetchRewards");
   if (!restBaseUrl || !authHeaders) {
-    throw new Error("fetchRewardsByArtist: Supabase REST URL not configured");
+    throw new Error("fetchRewards: Supabase REST URL not configured");
   }
 
   const params = new URLSearchParams({
     select: "*",
     order: "created_at.desc",
-    artist_public_key: `eq.${artistPublicKey}`,
   });
+
+  if (options.artistPublicKey) {
+    params.append("artist_public_key", `eq.${options.artistPublicKey}`);
+  }
 
   if (options.activeOnly !== false) {
     params.set("is_active", "eq.true");
@@ -123,4 +126,11 @@ export async function fetchRewardsByArtist(
 
   const records = (await response.json()) as RewardRecord[];
   return records.map(mapReward);
+}
+
+export async function fetchRewardsByArtist(
+  artistPublicKey: string,
+  options: FetchRewardsOptions = {},
+): Promise<Reward[]> {
+  return fetchRewards({ ...options, artistPublicKey });
 }

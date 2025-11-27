@@ -12,19 +12,25 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { listDistributedTokens } from "../services/artistTokens";
+import { fetchRewards } from "../services/rewards";
 import type { ArtistToken, TokenDisplay } from "../types/artistToken";
+import type { Reward } from "../types/reward";
+import { NftCard } from "../components/NftCard";
 
 const filterTabs: Array<{
-  id: "all" | "artists" | "tokens" | "nfts";
+  id: "artists" | "tokens" | "nfts";
   label: string;
 }> = [
-  { id: "all", label: "All" },
   { id: "artists", label: "Artists" },
   { id: "tokens", label: "Tokens" },
   { id: "nfts", label: "NFTs" },
 ];
 
-// Transform ArtistToken to TokenDisplay format
+type DisplayItem =
+  | { type: "token"; data: TokenDisplay }
+  | { type: "nft"; data: Reward };
+
+// ... (transformTokenToDisplay function remains the same) ...
 const transformTokenToDisplay = (token: ArtistToken): TokenDisplay => {
   // Extract handle from artist_name or use a shortened version of the public key
   const handle =
@@ -57,9 +63,7 @@ const transformTokenToDisplay = (token: ArtistToken): TokenDisplay => {
 
 const Explore: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "artists" | "tokens" | "nfts">(
-    "all",
-  );
+  const [filter, setFilter] = useState<"artists" | "tokens" | "nfts">("tokens");
   const [selectedToken, setSelectedToken] = useState<TokenDisplay | null>(null);
   const [isBuyDialogOpen, setIsBuyDialogOpen] = useState(false);
   const [rewardDialogArtist, setRewardDialogArtist] =
@@ -77,6 +81,14 @@ const Explore: React.FC = () => {
     queryFn: () => listDistributedTokens(100, 0),
     refetchOnWindowFocus: false,
     retry: 2,
+  });
+
+  // Fetch rewards (NFTs)
+  const { data: rewards = [], isLoading: rewardsLoading } = useQuery<Reward[]>({
+    queryKey: ["allRewards"],
+
+    queryFn: () => fetchRewards({ activeOnly: true }),
+    staleTime: 60000,
   });
 
   // Transform tokens to display format
@@ -99,26 +111,35 @@ const Explore: React.FC = () => {
     setIsRewardsDialogOpen(true);
   };
 
-  // Filter tokens based on search query
-  const searchMatches = useMemo(() => {
-    if (!searchQuery) return tokens;
-    const query = searchQuery.toLowerCase();
-    return tokens.filter((token) => {
-      return (
-        token.name.toLowerCase().includes(query) ||
-        token.handle.toLowerCase().includes(query) ||
-        token.tokenSymbol.toLowerCase().includes(query) ||
-        token.genres.some((genre) => genre.toLowerCase().includes(query)) ||
-        (token.description && token.description.toLowerCase().includes(query))
-      );
-    });
-  }, [tokens, searchQuery]);
-
   // Apply filter
-  const filteredTokens =
-    filter === "artists" || filter === "all" || filter === "tokens"
-      ? searchMatches
-      : [];
+  // Combined content with filtering
+  const displayedContent = useMemo<DisplayItem[]>(() => {
+    const query = searchQuery.toLowerCase();
+
+    // Filter Tokens
+    const filteredTokens = tokens.filter(
+      (t) =>
+        !searchQuery ||
+        t.name.toLowerCase().includes(query) ||
+        t.tokenSymbol.toLowerCase().includes(query) ||
+        t.genres.some((genre) => genre.toLowerCase().includes(query)),
+    );
+
+    // Filter NFTs
+    const filteredRewards = rewards.filter(
+      (r) => !searchQuery || r.title.toLowerCase().includes(query),
+    );
+
+    switch (filter) {
+      case "artists":
+        return filteredTokens.map((t) => ({ type: "token", data: t }));
+      case "nfts":
+        return filteredRewards.map((r) => ({ type: "nft", data: r }));
+      case "tokens":
+      default:
+        return filteredTokens.map((t) => ({ type: "token", data: t }));
+    }
+  }, [tokens, rewards, filter, searchQuery]);
 
   return (
     <div className="container mx-auto space-y-8 px-4 py-10">
@@ -195,9 +216,9 @@ const Explore: React.FC = () => {
             )}
           </div>
 
-          {isLoading && (
+          {(isLoading || rewardsLoading) && (
             <div className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">Loading tokens...</p>
+              <p className="text-muted-foreground">Loading content...</p>
             </div>
           )}
 
@@ -210,109 +231,132 @@ const Explore: React.FC = () => {
             </div>
           )}
 
-          {!isLoading && !error && filteredTokens.length === 0 && (
-            <div className="rounded-lg border border-border/60 bg-background/40 p-8 text-center">
-              <p className="text-muted-foreground">
-                {searchQuery
-                  ? "No tokens match your search."
-                  : "No distributed tokens found."}
-              </p>
-            </div>
-          )}
+          {!isLoading &&
+            !rewardsLoading &&
+            !error &&
+            displayedContent.length === 0 && (
+              <div className="rounded-lg border border-border/60 bg-background/40 p-8 text-center">
+                <p className="text-muted-foreground">
+                  {searchQuery
+                    ? "No results match your search."
+                    : "No items found."}
+                </p>
+              </div>
+            )}
 
-          {!isLoading && !error && filteredTokens.length > 0 && (
-            <div className="space-y-4">
-              {filteredTokens.map((token) => (
-                <Card
-                  key={token.id}
-                  className="border-border/60 bg-gradient-to-r from-background/80 to-background/40"
-                >
-                  <CardContent className="flex flex-col gap-6 py-6 md:flex-row md:items-center md:justify-between">
-                    <div className="flex flex-1 items-center gap-4">
-                      <div className="flex size-14 items-center justify-center rounded-full border border-border/60 bg-background/60 text-lg font-semibold text-amber-200">
-                        {token.avatar ? (
-                          <img
-                            src={token.avatar}
-                            alt={token.name}
-                            className="size-full rounded-full object-cover"
-                          />
-                        ) : (
-                          token.name.charAt(0).toUpperCase()
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="text-xl text-white">
-                            {token.name}
-                          </CardTitle>
-                          {token.isFeatured && (
-                            <Badge
-                              variant="secondary"
-                              className="uppercase tracking-wide"
-                            >
-                              Featured
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className="text-xs">
-                            Distributed
-                          </Badge>
-                        </div>
-                        <CardDescription>@{token.handle}</CardDescription>
-                        {token.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {token.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          {token.genres.map((genre) => (
-                            <Badge key={genre} variant="outline">
-                              {genre}
-                            </Badge>
-                          ))}
-                        </div>
-                        {token.distributedAt && (
-                          <p className="text-xs text-muted-foreground">
-                            Distributed:{" "}
-                            {new Date(token.distributedAt).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-start gap-2 md:items-end">
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-white">
-                          {token.tokenSymbol}
-                        </p>
-                        {token.totalSupply && (
-                          <p className="text-xs text-muted-foreground">
-                            Supply: {Number(token.totalSupply).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex w-full flex-col gap-2 md:w-auto">
-                        <Button
-                          onClick={() => handleBuyClick(token)}
-                          className="w-full md:w-auto"
-                          disabled={!token.tokenSymbol || !token.tokenIssuer}
-                        >
-                          💰 Buy
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full md:w-auto"
-                          onClick={() => handleRewardsClick(token)}
-                          disabled={!token.tokenIssuer}
-                        >
-                          🎁 Rewards
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          {!isLoading &&
+            !rewardsLoading &&
+            !error &&
+            displayedContent.length > 0 && (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {displayedContent.map((item) => {
+                  if (item.type === "token") {
+                    const token = item.data;
+                    return (
+                      <Card
+                        key={`token-${token.id}`}
+                        className="border-border/60 bg-gradient-to-r from-background/80 to-background/40 h-full"
+                      >
+                        <CardContent className="flex flex-col gap-6 py-6 h-full">
+                          <div className="flex items-center gap-4">
+                            <div className="flex size-14 items-center justify-center rounded-full border border-border/60 bg-background/60 text-lg font-semibold text-amber-200 shrink-0">
+                              {token.avatar ? (
+                                <img
+                                  src={token.avatar}
+                                  alt={token.name}
+                                  className="size-full rounded-full object-cover"
+                                />
+                              ) : (
+                                token.name.charAt(0).toUpperCase()
+                              )}
+                            </div>
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <CardTitle className="text-lg text-white truncate">
+                                  {token.name}
+                                </CardTitle>
+                                {token.isFeatured && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="uppercase tracking-wide text-[10px]"
+                                  >
+                                    Featured
+                                  </Badge>
+                                )}
+                              </div>
+                              <CardDescription className="truncate">
+                                @{token.handle}
+                              </CardDescription>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 flex-1 flex flex-col">
+                            {token.description && (
+                              <p className="text-sm text-muted-foreground line-clamp-2 h-10">
+                                {token.description}
+                              </p>
+                            )}
+
+                            <div className="flex flex-wrap gap-2">
+                              {token.genres.slice(0, 3).map((genre) => (
+                                <Badge key={genre} variant="outline">
+                                  {genre}
+                                </Badge>
+                              ))}
+                            </div>
+
+                            <div className="flex justify-between items-end pt-2 mt-auto">
+                              <div>
+                                <p className="text-sm font-medium text-white">
+                                  {token.tokenSymbol}
+                                </p>
+                                {token.totalSupply && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Supply:{" "}
+                                    {Number(token.totalSupply).toLocaleString()}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={() => handleBuyClick(token)}
+                                  size="sm"
+                                  disabled={
+                                    !token.tokenSymbol || !token.tokenIssuer
+                                  }
+                                >
+                                  💰 Buy
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRewardsClick(token)}
+                                  disabled={!token.tokenIssuer}
+                                >
+                                  🎁 Rewards
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  } else {
+                    const reward = item.data;
+                    return (
+                      <NftCard
+                        key={`nft-${reward.id}`}
+                        reward={reward}
+                        onAction={(r) => {
+                          console.log("View NFT:", r.id);
+                        }}
+                      />
+                    );
+                  }
+                })}
+              </div>
+            )}
         </div>
       </section>
 

@@ -1,10 +1,15 @@
 import type { Client as FactoryContractClient } from "factory";
 import { TokenType } from "factory";
 import { unwrapResult } from "./contracts";
+import { networkPassphrase, rpcUrl } from "../contracts/util";
+import * as DjNftClient from "dj_nft";
+// import
 
 export interface NftCollectionInfo {
   contractId: string;
   issuer: string;
+  name: string;
+  symbol: string;
 }
 
 interface FetchOptions {
@@ -27,6 +32,7 @@ export async function fetchNftCollections(
     if (!contractId) continue;
 
     try {
+      // 1. Check Factory Info first (to filter quickly)
       const infoResponse = await factoryClient.get_token_info({
         token_addr: contractId,
       });
@@ -35,17 +41,41 @@ export async function fetchNftCollections(
         `get_token_info:${contractId}`,
       );
 
+      // Filter: Must be NFT type
       if (info.token_type !== TokenType.Nft) {
         continue;
       }
 
+      // Filter: Must match Owner (if provided)
       if (owner && info.issuer !== owner) {
         continue;
       }
 
-      collections.push({ contractId, issuer: info.issuer });
+      // 2. Hydrate Metadata: Instantiate the NFT Client
+      const nftClient = new DjNftClient.Client({
+        contractId,
+        networkPassphrase: String(networkPassphrase),
+        rpcUrl,
+        allowHttp: true,
+      });
+
+      // 3. Fetch Name and Symbol from the contract
+      // We use Promise.all to fetch both in parallel for speed
+      const [nameStr, symbolStr] = await Promise.all([
+        nftClient.name(),
+        nftClient.symbol(),
+      ]);
+
+      // 4. Push the full object
+      collections.push({
+        contractId,
+        issuer: info.issuer,
+        name: nameStr.result.toString(), // Convert ScVal/String to JS string
+        symbol: symbolStr.result.toString(), // Convert ScVal/String to JS string
+      });
     } catch (error) {
-      console.error(`Failed to load token info for ${contractId}`, error);
+      console.error(`Failed to load details for ${contractId}`, error);
+      // Optional: You could push a fallback object here if you still want it to show up
     }
   }
 
