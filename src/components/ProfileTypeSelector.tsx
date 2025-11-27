@@ -1,26 +1,32 @@
 import React from "react";
 import { useProfileType } from "../hooks/useProfileType";
-import styles from "./ProfileTypeSelector.module.css";
+import { useWallet } from "../hooks/useWallet";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 const ProfileTypeSelector: React.FC = () => {
-  const { profileType, setProfileType } = useProfileType();
+  const { profileType, isLoading } = useProfileType();
+  const { address } = useWallet();
+
+  // If not connected, we don't show a role badge
+  if (!address) return null;
+
+  if (isLoading) {
+    return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  }
 
   return (
-    <div className={styles.selector}>
-      <button
-        className={`${styles.option} ${profileType === "DJ" ? styles.active : ""}`}
-        onClick={() => setProfileType("DJ")}
-        type="button"
+    <div className="flex items-center gap-2">
+      <Badge
+        variant="outline"
+        className={`${
+          profileType === "DJ"
+            ? "border-accent text-accent bg-accent/10"
+            : "border-muted-foreground text-muted-foreground"
+        }`}
       >
-        DJ
-      </button>
-      <button
-        className={`${styles.option} ${profileType === "Fan" ? styles.active : ""}`}
-        onClick={() => setProfileType("Fan")}
-        type="button"
-      >
-        Fan
-      </button>
+        {profileType === "DJ" ? "DJ Account" : "Fan Account"}
+      </Badge>
     </div>
   );
 };
