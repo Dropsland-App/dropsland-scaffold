@@ -38,12 +38,12 @@ lerna-debug.log*
 # generated contract clients
 # Note: Packages are committed to support Vercel builds (no Rust/Cargo support)
 # if you have other workspace packages, add them here
-packages/*
-!packages/.gitkeep
+#packages/*
+#!packages/.gitkeep
 
 # generated contract client imports
 # Note: Contract imports are committed to support Vercel builds
-src/contracts/*
-!src/contracts/util.ts
+#src/contracts/*
+#!src/contracts/util.ts
 
 .repomixignore
