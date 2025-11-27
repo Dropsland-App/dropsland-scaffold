@@ -191,6 +191,7 @@ export function useTokenCreation() {
 
         const params = {
           artistPublicKey: address,
+          artistName: formData.artistName,
           tokenCode: formData.tokenCode.toUpperCase(),
           tokenName: formData.tokenName,
           totalSupply: formData.totalSupply,

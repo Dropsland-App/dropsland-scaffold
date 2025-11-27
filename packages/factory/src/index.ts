@@ -31,16 +31,17 @@ if (typeof window !== "undefined") {
 }
 
 export const networks = {
-  standalone: {
-    networkPassphrase: "Standalone Network ; February 2017",
-    contractId: "CB7VSV7T4NOQ6MTNZLNFAEBFPLOHZBSE66M2BX2YCUVUMMQN2XPC2K3U",
+  testnet: {
+    networkPassphrase: "Test SDF Network ; September 2015",
+    contractId: "CAMR3MNJVTMKRHTSGOLDG3QMOI2KX2RGAHT5I4OKQ3735PDQWAFAYTNR",
   },
 } as const;
 
 export type DataKey =
   | { tag: "Admin"; values: void }
   | { tag: "Token"; values: void }
-  | { tag: "FundgibleWasm"; values: void }
+  | { tag: "FungibleWasm"; values: void }
+  | { tag: "NftWasm"; values: void }
   | { tag: "DeployNonce"; values: void }
   | { tag: "TokenRegistry"; values: void }
   | { tag: "TokenInfo"; values: readonly [string] };
@@ -152,6 +153,34 @@ export interface Client {
   ) => Promise<AssembledTransaction<Result<string>>>;
 
   /**
+   * Construct and simulate a create_nft transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  create_nft: (
+    {
+      owner,
+      base_uri,
+      name,
+      symbol,
+    }: { owner: string; base_uri: string; name: string; symbol: string },
+    options?: {
+      /**
+       * The fee to pay for the transaction. Default: BASE_FEE
+       */
+      fee?: number;
+
+      /**
+       * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+       */
+      timeoutInSeconds?: number;
+
+      /**
+       * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+       */
+      simulate?: boolean;
+    },
+  ) => Promise<AssembledTransaction<Result<string>>>;
+
+  /**
    * Construct and simulate a get_token_info transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
   get_token_info: (
@@ -236,6 +265,26 @@ export interface Client {
      */
     simulate?: boolean;
   }) => Promise<AssembledTransaction<Result<Buffer>>>;
+
+  /**
+   * Construct and simulate a get_nft_wasm transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   */
+  get_nft_wasm: (options?: {
+    /**
+     * The fee to pay for the transaction. Default: BASE_FEE
+     */
+    fee?: number;
+
+    /**
+     * The maximum amount of time to wait for the transaction to complete. Default: DEFAULT_TIMEOUT
+     */
+    timeoutInSeconds?: number;
+
+    /**
+     * Whether to automatically simulate the transaction when constructing the AssembledTransaction. Default: true
+     */
+    simulate?: boolean;
+  }) => Promise<AssembledTransaction<Result<Buffer>>>;
 }
 export class Client extends ContractClient {
   static async deploy<T = Client>(
@@ -244,7 +293,13 @@ export class Client extends ContractClient {
       admin,
       token,
       fungible_wasm,
-    }: { admin: string; token: string; fungible_wasm: Buffer },
+      nft_wasm,
+    }: {
+      admin: string;
+      token: string;
+      fungible_wasm: Buffer;
+      nft_wasm: Buffer;
+    },
     /** Options for initializing a Client as well as for calling a method, with extras specific to deploying. */
     options: MethodOptions &
       Omit<ContractClientOptions, "contractId"> & {
@@ -256,20 +311,25 @@ export class Client extends ContractClient {
         format?: "hex" | "base64";
       },
   ): Promise<AssembledTransaction<T>> {
-    return ContractClient.deploy({ admin, token, fungible_wasm }, options);
+    return ContractClient.deploy(
+      { admin, token, fungible_wasm, nft_wasm },
+      options,
+    );
   }
   constructor(public readonly options: ContractClientOptions) {
     super(
       new ContractSpec([
-        "AAAAAAAAAAAAAAANX19jb25zdHJ1Y3RvcgAAAAAAAAMAAAAAAAAABWFkbWluAAAAAAAAEwAAAAAAAAAFdG9rZW4AAAAAAAATAAAAAAAAAA1mdW5naWJsZV93YXNtAAAAAAAD7gAAACAAAAABAAAD6QAAA+0AAAAAAAAAAw==",
+        "AAAAAAAAAAAAAAANX19jb25zdHJ1Y3RvcgAAAAAAAAQAAAAAAAAABWFkbWluAAAAAAAAEwAAAAAAAAAFdG9rZW4AAAAAAAATAAAAAAAAAA1mdW5naWJsZV93YXNtAAAAAAAD7gAAACAAAAAAAAAACG5mdF93YXNtAAAD7gAAACAAAAABAAAD6QAAA+0AAAAAAAAAAw==",
         "AAAAAAAAAAAAAAAGZGVwbG95AAAAAAAEAAAAAAAAAAl3YXNtX2hhc2gAAAAAAAPuAAAAIAAAAAAAAAAEc2FsdAAAA+4AAAAgAAAAAAAAABBjb25zdHJ1Y3Rvcl9hcmdzAAAD6gAAAAAAAAAAAAAACnRva2VuX3R5cGUAAAAAB9AAAAAJVG9rZW5UeXBlAAAAAAAAAQAAA+kAAAATAAAAAw==",
         "AAAAAAAAAAAAAAAKZGVwbG95X3NhYwAAAAAAAgAAAAAAAAAGaXNzdWVyAAAAAAATAAAAAAAAABBzZXJpYWxpemVkX2Fzc2V0AAAADgAAAAEAAAAT",
         "AAAAAAAAAAAAAAAPY3JlYXRlX2Z1bmdpYmxlAAAAAAQAAAAAAAAABW93bmVyAAAAAAAAEwAAAAAAAAAIZGVjaW1hbHMAAAAEAAAAAAAAAARuYW1lAAAAEAAAAAAAAAAGc3ltYm9sAAAAAAAQAAAAAQAAA+kAAAATAAAAAw==",
+        "AAAAAAAAAAAAAAAKY3JlYXRlX25mdAAAAAAABAAAAAAAAAAFb3duZXIAAAAAAAATAAAAAAAAAAhiYXNlX3VyaQAAABAAAAAAAAAABG5hbWUAAAAQAAAAAAAAAAZzeW1ib2wAAAAAABAAAAABAAAD6QAAABMAAAAD",
         "AAAAAAAAAAAAAAAOZ2V0X3Rva2VuX2luZm8AAAAAAAEAAAAAAAAACnRva2VuX2FkZHIAAAAAABMAAAABAAAD6QAAB9AAAAANUmVnaXN0cnlFbnRyeQAAAAAAAAM=",
         "AAAAAAAAAAAAAAAOZ2V0X2FsbF90b2tlbnMAAAAAAAAAAAABAAAD6QAAA+oAAAATAAAAAw==",
         "AAAAAAAAAAAAAAAVZ2V0X2Z1bmdpYmxlX21ldGFkYXRhAAAAAAAAAQAAAAAAAAAKdG9rZW5fYWRkcgAAAAAAEwAAAAEAAAPtAAAABAAAABAAAAAQAAAABAAAABM=",
         "AAAAAAAAAAAAAAARZ2V0X2Z1bmdpYmxlX3dhc20AAAAAAAAAAAAAAQAAA+kAAAPuAAAAIAAAAAM=",
-        "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABgAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAFVG9rZW4AAAAAAAAAAAAAAAAAAA1GdW5kZ2libGVXYXNtAAAAAAAAAAAAAAAAAAALRGVwbG95Tm9uY2UAAAAAAAAAAAAAAAANVG9rZW5SZWdpc3RyeQAAAAAAAAEAAAAAAAAACVRva2VuSW5mbwAAAAAAAAEAAAAT",
+        "AAAAAAAAAAAAAAAMZ2V0X25mdF93YXNtAAAAAAAAAAEAAAPpAAAD7gAAACAAAAAD",
+        "AAAAAgAAAAAAAAAAAAAAB0RhdGFLZXkAAAAABwAAAAAAAAAAAAAABUFkbWluAAAAAAAAAAAAAAAAAAAFVG9rZW4AAAAAAAAAAAAAAAAAAAxGdW5naWJsZVdhc20AAAAAAAAAAAAAAAdOZnRXYXNtAAAAAAAAAAAAAAAAC0RlcGxveU5vbmNlAAAAAAAAAAAAAAAADVRva2VuUmVnaXN0cnkAAAAAAAABAAAAAAAAAAlUb2tlbkluZm8AAAAAAAABAAAAEw==",
         "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAABgAAAAAAAAATQ29udHJhY3RJbml0aWFsaXplZAAAAAAAAAAAAAAAABZDb250cmFjdE5vdEluaXRpYWxpemVkAAAAAAABAAAAAAAAABRBbW91bnRNdXN0QmVQb3NpdGl2ZQAAAAIAAAAAAAAAElVuYXV0aG9yaXplZEFjY2VzcwAAAAAAAwAAAAAAAAANVG9rZW5Ob3RGb3VuZAAAAAAAAAQAAAAAAAAAD0ludmFsaWRBcmd1bWVudAAAAAAF",
         "AAAAAwAAAAAAAAAAAAAACVRva2VuVHlwZQAAAAAAAAQAAAAAAAAAA1NhYwAAAAAAAAAAAAAAAAZDdXN0b20AAAAAAAEAAAAAAAAACEZ1bmdpYmxlAAAAAgAAAAAAAAADTmZ0AAAAAAM=",
         "AAAAAQAAAAAAAAAAAAAADVJlZ2lzdHJ5RW50cnkAAAAAAAACAAAAAAAAAAZpc3N1ZXIAAAAAABMAAAAAAAAACnRva2VuX3R5cGUAAAAAB9AAAAAJVG9rZW5UeXBlAAAA",
@@ -281,11 +341,13 @@ export class Client extends ContractClient {
     deploy: this.txFromJSON<Result<string>>,
     deploy_sac: this.txFromJSON<string>,
     create_fungible: this.txFromJSON<Result<string>>,
+    create_nft: this.txFromJSON<Result<string>>,
     get_token_info: this.txFromJSON<Result<RegistryEntry>>,
     get_all_tokens: this.txFromJSON<Result<Array<string>>>,
     get_fungible_metadata: this.txFromJSON<
       readonly [string, string, u32, string]
     >,
     get_fungible_wasm: this.txFromJSON<Result<Buffer>>,
+    get_nft_wasm: this.txFromJSON<Result<Buffer>>,
   };
 }

@@ -2,6 +2,7 @@
 
 export interface TokenCreationParams {
   artistPublicKey: string;
+  artistName: string;
   tokenCode: string;
   tokenName: string;
   totalSupply: string;
@@ -86,6 +87,7 @@ export interface TokenCreationState {
 }
 
 export interface TokenCreationFormData {
+  artistName: string;
   tokenCode: string;
   tokenName: string;
   totalSupply: string;

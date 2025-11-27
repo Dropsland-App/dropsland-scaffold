@@ -18,6 +18,7 @@ import { connectWallet } from "../util/wallet";
 import { useTokenCreation } from "../hooks/useTokenCreation";
 import type { TokenCreationFormData } from "../types/tokenCreation";
 import { stellarNetwork } from "../contracts/util";
+import { useProfile } from "../hooks/useProfile";
 
 interface CreateTokenFormProps {
   visible: boolean;
@@ -87,7 +88,10 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
     goToStep,
   } = useTokenCreation();
 
+  const { profile, isLoading: profileLoading } = useProfile();
+
   const [formData, setFormData] = useState<TokenCreationFormData>({
+    artistName: "",
     tokenCode: "",
     tokenName: "",
     totalSupply: "1000000000", // Fixed at 1 billion
@@ -105,11 +109,19 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
     }));
   }, [selectedTier]);
 
+  // Pre-fill artist name when profile loads
+  useEffect(() => {
+    if (profile?.username) {
+      setFormData((prev) => ({ ...prev, artistName: profile.username }));
+    }
+  }, [profile]);
+
   // Reset form when modal closes
   useEffect(() => {
     if (!visible) {
       reset();
       setFormData({
+        artistName: "",
         tokenCode: "",
         tokenName: "",
         totalSupply: "1000000000", // Fixed at 1 billion
@@ -178,8 +190,15 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
       return;
     }
 
+    // Use profile name directly as fallback
+    const effectiveArtistName = formData.artistName || profile?.username || "";
+
     // Validate form
-    if (!formData.tokenCode.trim() || !formData.tokenName.trim()) {
+    if (
+      !effectiveArtistName.trim() ||
+      !formData.tokenCode.trim() ||
+      !formData.tokenName.trim()
+    ) {
       setError("Please fill in all required fields");
       console.log("Validation failed: missing fields");
       return;
@@ -199,7 +218,10 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
 
     console.log("All validations passed, calling handlePrepareToken");
     // handlePrepareToken will set loading and move to step 3
-    await handlePrepareToken(formData);
+    await handlePrepareToken({
+      ...formData,
+      artistName: effectiveArtistName,
+    });
   };
 
   const getStellarExplorerUrl = (hash: string) => {
@@ -262,6 +284,8 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                   </p>
                 </div>
               </div>
+            ) : profileLoading ? (
+              <div className="text-center py-4">Loading profile...</div>
             ) : (
               <>
                 <div className="text-center space-y-2">
@@ -293,6 +317,18 @@ export const CreateTokenForm: React.FC<CreateTokenFormProps> = ({
                   }}
                   className="space-y-4"
                 >
+                  <div className="space-y-2">
+                    <Label htmlFor="artistName">Artist / DJ Name</Label>
+                    <Input
+                      id="artistName"
+                      type="text"
+                      value={formData.artistName || profile?.username || ""}
+                      disabled={true}
+                      className="bg-muted text-muted-foreground"
+                      readOnly
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="tokenCode">
                       Token Code (1-12 characters)

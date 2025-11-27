@@ -11,9 +11,11 @@ import Wallet from "./pages/Wallet.tsx";
 import Activity from "./pages/Activity.tsx";
 import Profile from "./pages/Profile.tsx";
 import { Button } from "./components/ui/button.tsx";
+import { OnboardingModal } from "./components/OnboardingModal.tsx";
 
 const AppLayout: React.FC = () => (
   <div className="flex min-h-screen flex-col bg-[#030712] text-foreground">
+    <OnboardingModal />
     <header className="sticky top-0 z-30 border-b border-border/40 bg-background/80 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center gap-4">
         <div className="flex flex-1 items-center gap-4">

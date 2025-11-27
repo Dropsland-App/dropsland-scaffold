@@ -30,6 +30,13 @@ if (typeof window !== "undefined") {
   window.Buffer = window.Buffer || Buffer;
 }
 
+export const networks = {
+  testnet: {
+    networkPassphrase: "Test SDF Network ; September 2015",
+    contractId: "CBTROKYE2U7SBP5YM5YSTBQPA7EMJ74VTVW7QBE4YWH7AKLZKA4JQXRQ",
+  },
+} as const;
+
 /**
  * Storage key for enumeration of accounts per role.
  */

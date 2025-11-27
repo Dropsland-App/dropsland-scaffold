@@ -143,7 +143,10 @@ export const RewardManagerCard: React.FC<RewardManagerCardProps> = ({
                         key={collection.contractId}
                         value={collection.contractId}
                       >
-                        {shorten(collection.contractId)}
+                        {/* Display Name (Symbol) - fallback to ID if name is missing */}
+                        {collection.name
+                          ? `${collection.name} (${collection.symbol})`
+                          : shorten(collection.contractId)}
                       </SelectItem>
                     ))}
                   </SelectContent>
