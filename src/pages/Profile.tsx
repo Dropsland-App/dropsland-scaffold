@@ -175,30 +175,51 @@ const Profile: React.FC = () => {
 
       <Tabs defaultValue="overview" className="space-y-8">
         <TabsList className="bg-background/50 border border-border/40 p-1 h-auto">
-          <TabsTrigger value="overview" className="px-6 py-2">
+          <TabsTrigger
+            value="overview"
+            className="px-6 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
             Overview
           </TabsTrigger>
-          <TabsTrigger value="music" className="px-6 py-2">
+          <TabsTrigger
+            value="music"
+            className="px-6 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
             Music
           </TabsTrigger>
           {profileType === "DJ" ? (
             <>
-              <TabsTrigger value="token" className="px-6 py-2">
+              <TabsTrigger
+                value="token"
+                className="px-6 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 My Token
               </TabsTrigger>
-              <TabsTrigger value="collections" className="px-6 py-2">
+              <TabsTrigger
+                value="collections"
+                className="px-6 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 NFT Collections
               </TabsTrigger>
-              <TabsTrigger value="rewards" className="px-6 py-2">
+              <TabsTrigger
+                value="rewards"
+                className="px-6 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 Rewards
               </TabsTrigger>
             </>
           ) : (
             <>
-              <TabsTrigger value="collected" className="px-6 py-2">
+              <TabsTrigger
+                value="collected"
+                className="px-6 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 Collected
               </TabsTrigger>
-              <TabsTrigger value="following" className="px-6 py-2">
+              <TabsTrigger
+                value="following"
+                className="px-6 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 Following
               </TabsTrigger>
             </>
