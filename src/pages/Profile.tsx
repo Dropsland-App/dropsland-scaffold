@@ -16,6 +16,7 @@ import { ProfileHeader } from "../features/profile/ProfileHeader";
 import { toast } from "sonner";
 import { CreateNftCollectionForm } from "@/features/nfts/components/CreateNftCollectionForm";
 import { CreateTokenForm } from "@/features/tokens/components/CreateTokenForm";
+import { SettingsDialog } from "../features/profile/components/SettingsDialog";
 import { useOwnedNfts } from "../hooks/useOwnedNfts";
 import { CollectiblesSidebar } from "../features/wallet/components/CollectiblesSidebar";
 
@@ -39,6 +40,7 @@ const Profile: React.FC = () => {
 
   const [isNftFormVisible, setIsNftFormVisible] = useState(false);
   const [isTokenFormVisible, setIsTokenFormVisible] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -46,7 +48,7 @@ const Profile: React.FC = () => {
   };
 
   const handleEdit = () => {
-    console.log("Edit profile");
+    setIsSettingsOpen(true);
   };
 
   if (!address) {
@@ -195,6 +197,10 @@ const Profile: React.FC = () => {
         <CreateTokenForm
           visible={isTokenFormVisible}
           onClose={() => setIsTokenFormVisible(false)}
+        />
+        <SettingsDialog
+          open={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
         />
       </div>
     </div>

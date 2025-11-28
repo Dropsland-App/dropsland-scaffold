@@ -10,10 +10,12 @@ import { Wallet as WalletIcon, Loader2 } from "lucide-react";
 import { PortfolioCard } from "../features/wallet/PortfolioCard";
 import { AssetList } from "../features/wallet/components/AssetList";
 import { CollectiblesSidebar } from "../features/wallet/components/CollectiblesSidebar";
+import { ReceiveDialog } from "../features/wallet/components/ReceiveDialog";
 import { toast } from "sonner";
 
 const Wallet: React.FC = () => {
   const { address, isPending } = useWallet();
+  const [isReceiveOpen, setIsReceiveOpen] = React.useState(false);
   const { xlm, balances, isLoading } = useWalletBalance();
   const {
     data: ownedCollections = [],
@@ -100,7 +102,7 @@ const Wallet: React.FC = () => {
               onCopyAddress={copyToClipboard}
               onViewExplorer={openExplorer}
               onSend={() => console.log("Send")}
-              onReceive={() => console.log("Receive")}
+              onReceive={() => setIsReceiveOpen(true)}
             />
 
             {/* Token List */}
@@ -117,6 +119,13 @@ const Wallet: React.FC = () => {
             />
           </div>
         </div>
+      )}
+      {address && (
+        <ReceiveDialog
+          address={address}
+          open={isReceiveOpen}
+          onOpenChange={setIsReceiveOpen}
+        />
       )}
     </div>
   );
