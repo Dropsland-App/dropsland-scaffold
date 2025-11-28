@@ -169,8 +169,15 @@ const ScaffoldHome: React.FC = () => {
                     comments: post.comments_count,
                   },
                   actionLabel:
-                    post.type === "token_launch" ? "Buy Token" : undefined, // Simplistic logic
-                  // onAction: ... wire up to buy dialog
+                    post.type === "token_launch" ? "Buy Token" : undefined,
+                  onAction:
+                    post.type === "token_launch"
+                      ? () =>
+                          handleBuyClick(
+                            post.reference_id || "TOKEN",
+                            post.artist_public_key,
+                          )
+                      : undefined,
                 }}
               />
             ))

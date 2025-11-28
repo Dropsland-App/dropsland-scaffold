@@ -1,5 +1,6 @@
 import { supabase } from "@/util/supabase";
 import type { Track, StreamResponse } from "../types/music";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * 1. Fetch Tracks
@@ -25,12 +26,63 @@ export async function fetchTracks(artistPublicKey?: string): Promise<Track[]> {
 
   const { data, error } = await query;
 
-  if (error) {
-    console.error("Error fetching tracks:", error);
-    throw error;
-  }
+  if (error) throw new Error(error.message);
 
   return data as Track[];
+}
+
+export interface UploadTrackPayload {
+  artistPublicKey: string;
+  title: string;
+  description: string;
+  audioFile: File;
+  coverFile?: File;
+  isPublic: boolean;
+}
+
+export async function uploadTrack(payload: UploadTrackPayload): Promise<void> {
+  const {
+    artistPublicKey,
+    title,
+    description,
+    audioFile,
+    coverFile,
+    isPublic,
+  } = payload;
+
+  // 1. Upload Audio to Private Bucket
+  const audioPath = `${artistPublicKey}/${uuidv4()}-${audioFile.name}`;
+  const { error: audioError } = await supabase.storage
+    .from("music-private") // Ensure this bucket exists and is private
+    .upload(audioPath, audioFile);
+
+  if (audioError) throw new Error(`Audio upload failed: ${audioError.message}`);
+
+  // 2. Upload Cover to Public Bucket (Optional)
+  let coverPath = null;
+  if (coverFile) {
+    coverPath = `${artistPublicKey}/${uuidv4()}-${coverFile.name}`;
+    const { error: coverError } = await supabase.storage
+      .from("music-public") // Ensure this bucket exists and is public
+      .upload(coverPath, coverFile);
+
+    if (coverError)
+      throw new Error(`Cover upload failed: ${coverError.message}`);
+  }
+
+  // 3. Insert Record into Database
+  const { error: dbError } = await supabase.from("tracks").insert({
+    artist_public_key: artistPublicKey,
+    title,
+    description,
+    audio_file_path: audioPath,
+    cover_image_url: coverPath, // Store the path, getPublicAssetUrl handles the rest
+    is_public: isPublic,
+    // For now, we default gates to null. You can extend this form later to select specific tokens.
+    min_token_amount: 0,
+  });
+
+  if (dbError) throw new Error(dbError.message);
 }
 
 /**

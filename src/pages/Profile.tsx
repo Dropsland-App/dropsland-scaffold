@@ -16,6 +16,10 @@ import { ProfileHeader } from "../features/profile/ProfileHeader";
 import { toast } from "sonner";
 import { CreateNftCollectionForm } from "@/features/nfts/components/CreateNftCollectionForm";
 import { CreateTokenForm } from "@/features/tokens/components/CreateTokenForm";
+import { SettingsDialog } from "../features/profile/components/SettingsDialog";
+import { UploadTrackDialog } from "../features/music/components/UploadTrackDialog";
+import { useOwnedNfts } from "../hooks/useOwnedNfts";
+import { CollectiblesSidebar } from "../features/wallet/components/CollectiblesSidebar";
 
 const Profile: React.FC = () => {
   const { profileType } = useProfileType();
@@ -28,8 +32,17 @@ const Profile: React.FC = () => {
     enabled: !!address,
   });
 
+  const {
+    data: ownedCollections = [],
+    isPending: ownedLoading,
+    error: ownedError,
+    refetch: refetchOwned,
+  } = useOwnedNfts(address);
+
   const [isNftFormVisible, setIsNftFormVisible] = useState(false);
   const [isTokenFormVisible, setIsTokenFormVisible] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -37,7 +50,7 @@ const Profile: React.FC = () => {
   };
 
   const handleEdit = () => {
-    console.log("Edit profile");
+    setIsSettingsOpen(true);
   };
 
   if (!address) {
@@ -133,7 +146,7 @@ const Profile: React.FC = () => {
             <ProfileMusicTab
               tracks={artistTracks}
               isArtist={profileType === "DJ"}
-              onUpload={() => console.log("Upload track")}
+              onUpload={() => setIsUploadOpen(true)}
               onUnlockRequest={(track) => console.log("Unlock", track.title)}
             />
           </TabsContent>
@@ -149,23 +162,32 @@ const Profile: React.FC = () => {
 
           {/* --- FAN: COLLECTED --- */}
           <TabsContent value="collected" className="space-y-6">
-            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
-              <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold text-white">
-                Your collection is empty
-              </h3>
-              <p className="text-muted-foreground max-w-sm mx-auto mt-2 mb-6">
-                Start collecting NFTs and Tokens from your favorite artists to
-                unlock exclusive perks.
-              </p>
-              <Button
-                variant="outline"
-                className="border-white/10 bg-white/5 hover:bg-white/10 hover:text-white"
-                onClick={() => (window.location.href = "/explore")}
-              >
-                Explore Artists
-              </Button>
-            </div>
+            {ownedCollections.length > 0 ? (
+              <CollectiblesSidebar
+                collections={ownedCollections}
+                isLoading={ownedLoading}
+                error={ownedError}
+                onRetry={() => void refetchOwned()}
+              />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-12 text-center">
+                <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-semibold text-white">
+                  Your collection is empty
+                </h3>
+                <p className="text-muted-foreground max-w-sm mx-auto mt-2 mb-6">
+                  Start collecting NFTs and Tokens from your favorite artists to
+                  unlock exclusive perks.
+                </p>
+                <Button
+                  variant="outline"
+                  className="border-white/10 bg-white/5 hover:bg-white/10 hover:text-white"
+                  onClick={() => (window.location.href = "/explore")}
+                >
+                  Explore Artists
+                </Button>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
@@ -178,6 +200,11 @@ const Profile: React.FC = () => {
           visible={isTokenFormVisible}
           onClose={() => setIsTokenFormVisible(false)}
         />
+        <SettingsDialog
+          open={isSettingsOpen}
+          onOpenChange={setIsSettingsOpen}
+        />
+        <UploadTrackDialog open={isUploadOpen} onOpenChange={setIsUploadOpen} />
       </div>
     </div>
   );

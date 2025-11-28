@@ -10,10 +10,14 @@ import { Wallet as WalletIcon, Loader2 } from "lucide-react";
 import { PortfolioCard } from "../features/wallet/PortfolioCard";
 import { AssetList } from "../features/wallet/components/AssetList";
 import { CollectiblesSidebar } from "../features/wallet/components/CollectiblesSidebar";
+import { ReceiveDialog } from "../features/wallet/components/ReceiveDialog";
+import { SendDialog } from "../features/wallet/components/SendDialog";
 import { toast } from "sonner";
 
 const Wallet: React.FC = () => {
   const { address, isPending } = useWallet();
+  const [isReceiveOpen, setIsReceiveOpen] = React.useState(false);
+  const [isSendOpen, setIsSendOpen] = React.useState(false);
   const { xlm, balances, isLoading } = useWalletBalance();
   const {
     data: ownedCollections = [],
@@ -99,8 +103,8 @@ const Wallet: React.FC = () => {
               isLoading={isLoading}
               onCopyAddress={copyToClipboard}
               onViewExplorer={openExplorer}
-              onSend={() => console.log("Send")}
-              onReceive={() => console.log("Receive")}
+              onSend={() => setIsSendOpen(true)}
+              onReceive={() => setIsReceiveOpen(true)}
             />
 
             {/* Token List */}
@@ -117,6 +121,16 @@ const Wallet: React.FC = () => {
             />
           </div>
         </div>
+      )}
+      {address && (
+        <>
+          <ReceiveDialog
+            address={address}
+            open={isReceiveOpen}
+            onOpenChange={setIsReceiveOpen}
+          />
+          <SendDialog open={isSendOpen} onOpenChange={setIsSendOpen} />
+        </>
       )}
     </div>
   );

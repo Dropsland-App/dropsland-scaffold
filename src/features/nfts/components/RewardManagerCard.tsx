@@ -245,24 +245,50 @@ export const RewardManagerCard: React.FC<RewardManagerCardProps> = ({
               {sortedRewards.map((reward: Reward) => (
                 <li
                   key={reward.id}
-                  className="rounded-lg border border-border/40 bg-background/50 p-3"
+                  className="group flex gap-3 rounded-lg border border-border/40 bg-background/50 p-3 transition-colors hover:bg-background/60"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-white">{reward.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Contract {shorten(reward.nftContractId)}
-                      </p>
-                    </div>
-                    {reward.isActive && (
-                      <Badge variant="secondary">Active</Badge>
+                  {/* Thumbnail Image - Solves URL overflow by rendering as image */}
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-black/20 border border-white/5">
+                    {reward.imageUrl ? (
+                      <img
+                        src={reward.imageUrl}
+                        alt={reward.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
+                        🎁
+                      </div>
                     )}
                   </div>
-                  {reward.description && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {reward.description}
-                    </p>
-                  )}
+
+                  <div className="flex flex-1 flex-col justify-between overflow-hidden">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium text-white truncate text-sm">
+                        {reward.title}
+                      </p>
+                      {reward.isActive && (
+                        <Badge
+                          variant="secondary"
+                          className="h-5 px-1.5 text-[10px]"
+                        >
+                          Active
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-[10px] text-muted-foreground truncate font-mono">
+                        Contract {shorten(reward.nftContractId)}
+                      </p>
+                      {reward.description && (
+                        <p className="text-xs text-muted-foreground/80 line-clamp-1 truncate">
+                          {reward.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
