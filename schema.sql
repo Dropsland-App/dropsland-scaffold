@@ -117,6 +117,16 @@ CREATE TABLE IF NOT EXISTS "public"."rewards" (
 );
 ALTER TABLE "public"."rewards" OWNER TO "postgres";
 
+-- 4.3.1 Reward Claims (Tracking Claims)
+CREATE TABLE IF NOT EXISTS "public"."reward_claims" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() PRIMARY KEY,
+    "reward_id" "uuid" NOT NULL,
+    "claimer_public_key" character varying(56) NOT NULL,
+    "tx_hash" character varying(64) NOT NULL,
+    "claimed_at" timestamp with time zone DEFAULT "now"()
+);
+ALTER TABLE "public"."reward_claims" OWNER TO "postgres";
+
 -- 4.4 Social Feed (The "Posts")
 CREATE TABLE IF NOT EXISTS "public"."posts" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL PRIMARY KEY,
@@ -130,6 +140,15 @@ CREATE TABLE IF NOT EXISTS "public"."posts" (
     "created_at" timestamp with time zone DEFAULT "now"()
 );
 ALTER TABLE "public"."posts" OWNER TO "postgres";
+
+-- 4.4.1 Post Likes
+CREATE TABLE IF NOT EXISTS "public"."post_likes" (
+    "user_public_key" character varying(56) NOT NULL,
+    "post_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    PRIMARY KEY ("user_public_key", "post_id")
+);
+ALTER TABLE "public"."post_likes" OWNER TO "postgres";
 
 -- 4.5 Music Content (The "Spotify" Layer)
 CREATE TABLE IF NOT EXISTS "public"."tracks" (
@@ -161,11 +180,16 @@ ALTER TABLE "public"."play_history" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."comments" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
-    "track_id" "uuid" NOT NULL,
+    "track_id" "uuid",
+    "post_id" "uuid",
     "user_public_key" character varying(56) NOT NULL,
     "content" "text" NOT NULL,
     "user_tier" character varying(50),
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "comment_target_check" CHECK (
+        ("track_id" IS NOT NULL AND "post_id" IS NULL) OR
+        ("track_id" IS NULL AND "post_id" IS NOT NULL)
+    )
 );
 ALTER TABLE "public"."comments" OWNER TO "postgres";
 
@@ -188,7 +212,7 @@ ALTER TABLE "public"."marketplace_listings" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."marketplace_sales" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
-    "listing_id" "uuid" NOT NULL,
+    "listing_id" "uuid",
     "token_id" "uuid" NOT NULL,
     "buyer_public_key" character varying(56) NOT NULL,
     "seller_public_key" character varying(56) NOT NULL,
@@ -247,7 +271,7 @@ ALTER TABLE "public"."token_metadata" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."token_transactions" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
-    "token_id" "uuid" NOT NULL,
+    "token_id" "uuid",
     "tx_hash" character varying(64) NOT NULL,
     "tx_type" character varying(50) NOT NULL,
     "from_address" character varying(56),
@@ -287,6 +311,67 @@ CREATE OR REPLACE VIEW "public"."top_tokens_by_volume" AS
   ORDER BY ("sum"("ms"."total_price_xlm")) DESC NULLS LAST;
 ALTER VIEW "public"."top_tokens_by_volume" OWNER TO "postgres";
 
+CREATE OR REPLACE VIEW "public"."activity_feed" AS
+-- Token Purchases
+SELECT
+    ms.id::text as id,
+    'token_purchase' as type,
+    p.username || ' bought $' || at.token_code as title,
+    'Swapped ' || ms.total_price_xlm || ' XLM for ' || ms.amount || ' Tokens' as description,
+    ms.sold_at as created_at,
+    ms.buyer_public_key as actor_key,
+    at.image_url as image
+FROM marketplace_sales ms
+JOIN profiles p ON ms.buyer_public_key = p.wallet_address
+JOIN artist_tokens at ON ms.token_id = at.id
+
+UNION ALL
+
+-- NFT Mints
+SELECT
+    rc.id::text as id,
+    'nft_mint' as type,
+    p.username || ' minted ' || r.title as title,
+    'Claimed exclusive reward from ' || ap.username as description,
+    rc.claimed_at as created_at,
+    rc.claimer_public_key as actor_key,
+    r.image_url as image
+FROM reward_claims rc
+JOIN profiles p ON rc.claimer_public_key = p.wallet_address
+JOIN rewards r ON rc.reward_id = r.id
+JOIN profiles ap ON r.artist_public_key = ap.wallet_address
+
+UNION ALL
+
+-- Music Uploads
+SELECT
+    t.id::text as id,
+    'music_upload' as type,
+    'New Drop: ' || t.title as title,
+    p.username || ' uploaded a new track' as description,
+    t.created_at as created_at,
+    t.artist_public_key as actor_key,
+    t.cover_image_url as image
+FROM tracks t
+JOIN profiles p ON t.artist_public_key = p.wallet_address
+WHERE t.is_public = true
+
+UNION ALL
+
+-- Transfers
+SELECT
+    tt.id::text as id,
+    'community_interaction' as type,
+    p.username || ' sent ' || tt.amount || ' ' || COALESCE(at.token_code, 'XLM') as title,
+    'Transfer to ' || SUBSTRING(tt.to_address, 1, 4) || '...' || SUBSTRING(tt.to_address, -4) as description,
+    tt.created_at as created_at,
+    tt.from_address as actor_key,
+    COALESCE(at.image_url, 'https://api.dicebear.com/7.x/shapes/svg?seed=XLM') as image
+FROM token_transactions tt
+JOIN profiles p ON tt.from_address = p.wallet_address
+LEFT JOIN artist_tokens at ON tt.token_id = at.id;
+ALTER VIEW "public"."activity_feed" OWNER TO "postgres";
+
 -- =============================================================================
 -- 6. FOREIGN KEYS
 -- =============================================================================
@@ -299,9 +384,19 @@ ALTER TABLE ONLY "public"."artist_tokens"
 ALTER TABLE ONLY "public"."rewards"
     ADD CONSTRAINT "fk_reward_artist" FOREIGN KEY ("artist_public_key") REFERENCES "public"."profiles"("wallet_address");
 
+-- Link Reward Claims
+ALTER TABLE ONLY "public"."reward_claims"
+    ADD CONSTRAINT "fk_claim_reward" FOREIGN KEY ("reward_id") REFERENCES "public"."rewards"("id"),
+    ADD CONSTRAINT "fk_claim_user" FOREIGN KEY ("claimer_public_key") REFERENCES "public"."profiles"("wallet_address");
+
 -- Link Posts to Profiles
 ALTER TABLE ONLY "public"."posts"
     ADD CONSTRAINT "posts_artist_public_key_fkey" FOREIGN KEY ("artist_public_key") REFERENCES "public"."profiles"("wallet_address");
+
+-- Link Post Likes
+ALTER TABLE ONLY "public"."post_likes"
+    ADD CONSTRAINT "fk_like_user" FOREIGN KEY ("user_public_key") REFERENCES "public"."profiles"("wallet_address") ON DELETE CASCADE,
+    ADD CONSTRAINT "fk_like_post" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE;
 
 -- Link Tracks
 ALTER TABLE ONLY "public"."tracks"
@@ -317,7 +412,8 @@ ALTER TABLE ONLY "public"."play_history"
 -- Link Comments
 ALTER TABLE ONLY "public"."comments"
     ADD CONSTRAINT "fk_comment_user" FOREIGN KEY ("user_public_key") REFERENCES "public"."profiles"("wallet_address"),
-    ADD CONSTRAINT "fk_comment_track" FOREIGN KEY ("track_id") REFERENCES "public"."tracks"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "fk_comment_track" FOREIGN KEY ("track_id") REFERENCES "public"."tracks"("id") ON DELETE CASCADE,
+    ADD CONSTRAINT "fk_comment_post" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id") ON DELETE CASCADE;
 
 -- Existing FKs for Marketplace/Metadata
 ALTER TABLE ONLY "public"."marketplace_listings" ADD CONSTRAINT "marketplace_listings_token_id_fkey" FOREIGN KEY ("token_id") REFERENCES "public"."artist_tokens"("id") ON DELETE CASCADE;
@@ -373,6 +469,8 @@ ALTER TABLE "public"."marketplace_listings" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."tracks" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."comments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."play_history" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."post_likes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."reward_claims" ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
 CREATE POLICY "Public can view profiles" ON "public"."profiles" FOR SELECT USING (true);
@@ -382,6 +480,9 @@ CREATE POLICY "Users can update their own profile" ON "public"."profiles" FOR UP
 -- Posts Policies
 CREATE POLICY "Public can view posts" ON "public"."posts" FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can create posts" ON "public"."posts" FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Post Likes Policies (Permissive for Prototype)
+CREATE POLICY "Enable toggle like for all" ON "public"."post_likes" FOR ALL USING (true) WITH CHECK (true);
 
 -- Market & Token Policies
 CREATE POLICY "Anyone can view active listings" ON "public"."marketplace_listings" FOR SELECT USING ("status"::text = 'active'::text);
@@ -393,13 +494,17 @@ CREATE POLICY "Sellers can update own listings" ON "public"."marketplace_listing
 CREATE POLICY "Public tracks view" ON "public"."tracks" FOR SELECT USING (true);
 CREATE POLICY "Artists manage own tracks" ON "public"."tracks" FOR ALL USING ((auth.uid())::text = (artist_public_key)::text);
 
--- Comments Policies
+-- Comments Policies (Permissive for Prototype)
 CREATE POLICY "Public comments view" ON "public"."comments" FOR SELECT USING (true);
-CREATE POLICY "Auth users comment" ON "public"."comments" FOR INSERT WITH CHECK ((auth.uid())::text = (user_public_key)::text);
+CREATE POLICY "Enable comments for all" ON "public"."comments" FOR INSERT WITH CHECK (true);
 
 -- Play History Policies
 CREATE POLICY "Users view own history" ON "public"."play_history" FOR SELECT USING ((auth.uid())::text = (user_public_key)::text);
 CREATE POLICY "Users log own plays" ON "public"."play_history" FOR INSERT WITH CHECK ((auth.uid())::text = (user_public_key)::text);
+
+-- Reward Claims Policies (Permissive for Prototype)
+CREATE POLICY "Public view claims" ON "public"."reward_claims" FOR SELECT USING (true);
+CREATE POLICY "Enable claims for all" ON "public"."reward_claims" FOR INSERT WITH CHECK (true);
 
 -- =============================================================================
 -- 11. PERMISSIONS
@@ -411,4 +516,5 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA "public" TO "postgres", "authenticated", "s
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA "public" TO "postgres", "authenticated", "service_role";
 
 -- Public Read Access
-GRANT SELECT ON TABLE "public"."profiles", "public"."posts", "public"."artist_tokens", "public"."marketplace_listings", "public"."rewards", "public"."tracks", "public"."comments" TO "anon";
+GRANT SELECT ON TABLE "public"."profiles", "public"."posts", "public"."artist_tokens", "public"."marketplace_listings", "public"."rewards", "public"."tracks", "public"."comments", "public"."post_likes", "public"."reward_claims", "public"."token_transactions", "public"."marketplace_sales" TO "anon";
+GRANT SELECT ON "public"."activity_feed" TO "anon";

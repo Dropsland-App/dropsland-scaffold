@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useBuyToken } from "./useBuyToken";
 import { useWallet } from "./useWallet";
+import { supabase } from "@/util/supabase";
 
 export function useBuyFlow(
   visible: boolean,
@@ -75,6 +76,29 @@ export function useBuyFlow(
         amountXlm: xlmAmount.toFixed(7),
         buyerPublicKey: address,
       });
+
+      // --- START FIX: Record Activity ---
+      // 1. Fetch the internal Token ID
+      const { data: tokenData } = await supabase
+        .from("artist_tokens")
+        .select("id")
+        .eq("token_code", tokenSymbol)
+        .eq("artist_public_key", tokenIssuer)
+        .single();
+
+      if (tokenData) {
+        // 2. Insert Sale Record
+        await supabase.from("marketplace_sales").insert({
+          token_id: tokenData.id,
+          buyer_public_key: address,
+          seller_public_key: tokenIssuer, // DEX offers are technically mixed, but this is a safe proxy
+          amount: tokenAmount,
+          price_per_token_xlm: 1.0, // Hardcoded 1:1 for now
+          total_price_xlm: xlmAmount,
+          tx_hash: result.txHash,
+        });
+      }
+      // --- END FIX ---
 
       setTransactionUrl(result.transactionUrl);
       setPurchasedAmounts({ xlm: xlmAmount, tokens: tokenAmount });

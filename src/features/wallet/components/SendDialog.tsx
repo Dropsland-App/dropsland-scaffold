@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Send } from "lucide-react";
 import { useWallet } from "@/hooks/useWallet";
+import { supabase } from "@/util/supabase";
 import { toast } from "sonner";
 import {
   TransactionBuilder,
@@ -84,6 +85,19 @@ export const SendDialog: React.FC<SendDialogProps> = ({
 
       const result = await server.submitTransaction(txToSubmit);
       console.log("Send success:", result);
+
+      // --- START FIX: Record Activity ---
+      if (result.hash) {
+        await supabase.from("token_transactions").insert({
+          tx_hash: result.hash,
+          tx_type: "payment",
+          from_address: address,
+          to_address: recipient,
+          amount: amount,
+          // token_id is NULL because this is an XLM transfer
+        });
+      }
+      // --- END FIX ---
 
       toast.success("Sent successfully!", {
         description: `${amount} XLM sent to ${recipient.slice(0, 4)}...${recipient.slice(-4)}`,

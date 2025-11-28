@@ -5,83 +5,24 @@ import {
   ShoppingCart,
   Layers,
   Music,
-  Users,
   ArrowUpRight,
   Activity as ActivityIcon,
   Filter,
   Clock,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useActivityFeed } from "@/hooks/useActivityFeed";
+import type { ActivityItem } from "@/services/activity";
+import { formatDistanceToNow, isToday, isYesterday, parseISO } from "date-fns";
 
-type ActivityType = "all" | "tokens" | "nfts" | "music" | "community";
-
-type ActivityItem = {
-  id: string;
-  type:
-    | "token_purchase"
-    | "nft_mint"
-    | "music_upload"
-    | "community_interaction";
-  title: string;
-  description: string;
-  timestamp: string;
-  dateGroup: "Today" | "Yesterday" | "This Week";
-  amount?: string; // Optional: for financial context
-  txHash?: string;
-};
+type ActivityType = "all" | "tokens" | "nfts" | "music";
 
 const activityFilters: Array<{ id: ActivityType; label: string }> = [
   { id: "all", label: "All Events" },
   { id: "tokens", label: "Transfers" },
   { id: "nfts", label: "Mints" },
   { id: "music", label: "Uploads" },
-];
-
-// Mock Data with date grouping
-const activities: ActivityItem[] = [
-  {
-    id: "1",
-    type: "token_purchase",
-    title: "Bought $SOLAR",
-    description: "Swapped 500 XLM for 500 $SOLAR",
-    timestamp: "2 mins ago",
-    dateGroup: "Today",
-    amount: "-500 XLM",
-  },
-  {
-    id: "2",
-    type: "nft_mint",
-    title: "Minted Genesis Pass",
-    description: "Claimed exclusive reward from DJ PABLO",
-    timestamp: "2 hours ago",
-    dateGroup: "Today",
-    amount: "+1 NFT",
-  },
-  {
-    id: "3",
-    type: "music_upload",
-    title: "New Drop: 'Neon Nights'",
-    description: "DJ PABLO uploaded a new track",
-    timestamp: "5 hours ago",
-    dateGroup: "Today",
-  },
-  {
-    id: "4",
-    type: "community_interaction",
-    title: "DAO Proposal",
-    description: "Voted on 'Summer Tour Locations'",
-    timestamp: "1 day ago",
-    dateGroup: "Yesterday",
-  },
-  {
-    id: "5",
-    type: "token_purchase",
-    title: "Bought $DUCK",
-    description: "Joined the flock",
-    timestamp: "2 days ago",
-    dateGroup: "This Week",
-    amount: "-120 XLM",
-  },
 ];
 
 const getActivityIcon = (type: ActivityItem["type"]) => {
@@ -107,18 +48,26 @@ const getActivityIcon = (type: ActivityItem["type"]) => {
         bg: "bg-blue-400/10",
         border: "border-blue-400/20",
       };
-    case "community_interaction":
+    default:
       return {
-        icon: Users,
-        color: "text-amber-400",
-        bg: "bg-amber-400/10",
-        border: "border-amber-400/20",
+        icon: ActivityIcon,
+        color: "text-gray-400",
+        bg: "bg-gray-400/10",
+        border: "border-gray-400/20",
       };
   }
 };
 
+const getDateGroup = (dateString: string) => {
+  const date = parseISO(dateString);
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+  return "Earlier";
+};
+
 const Activity: React.FC = () => {
   const [filter, setFilter] = useState<ActivityType>("all");
+  const { data: activities = [], isLoading, error } = useActivityFeed();
 
   const filteredActivities = activities.filter((activity) => {
     if (filter === "all") return true;
@@ -131,12 +80,18 @@ const Activity: React.FC = () => {
   // Group by Date for the UI
   const groupedActivities = filteredActivities.reduce(
     (groups, activity) => {
-      const group = groups[activity.dateGroup] || [];
+      const groupName = getDateGroup(activity.created_at);
+      const group = groups[groupName] || [];
       group.push(activity);
-      groups[activity.dateGroup] = group;
+      groups[groupName] = group;
       return groups;
     },
     {} as Record<string, ActivityItem[]>,
+  );
+
+  // Sort groups order
+  const sortedGroupKeys = ["Today", "Yesterday", "Earlier"].filter(
+    (key) => groupedActivities[key]?.length > 0,
   );
 
   return (
@@ -182,7 +137,23 @@ const Activity: React.FC = () => {
 
       {/* 3. The Feed */}
       <div className="space-y-8">
-        {Object.entries(groupedActivities).length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Loading activity...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 border border-red-500/20 rounded-3xl bg-red-500/5">
+            <p className="text-red-400 font-medium">Failed to load activity.</p>
+            <Button
+              variant="link"
+              className="text-red-400 underline"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : sortedGroupKeys.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-white/5">
             <Filter className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
             <p className="text-muted-foreground font-medium">
@@ -190,7 +161,7 @@ const Activity: React.FC = () => {
             </p>
           </div>
         ) : (
-          Object.entries(groupedActivities).map(([dateGroup, items]) => (
+          sortedGroupKeys.map((dateGroup) => (
             <div
               key={dateGroup}
               className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500"
@@ -200,7 +171,7 @@ const Activity: React.FC = () => {
               </h3>
 
               <div className="rounded-2xl border border-white/5 bg-[#111827]/40 overflow-hidden backdrop-blur-sm">
-                {items.map((activity, index) => {
+                {groupedActivities[dateGroup].map((activity, index) => {
                   const style = getActivityIcon(activity.type);
                   const Icon = style.icon;
 
@@ -209,7 +180,8 @@ const Activity: React.FC = () => {
                       key={activity.id}
                       className={cn(
                         "group flex items-center gap-4 p-4 hover:bg-white/5 transition-all duration-200 cursor-default",
-                        index !== items.length - 1 && "border-b border-white/5",
+                        index !== groupedActivities[dateGroup].length - 1 &&
+                          "border-b border-white/5",
                       )}
                     >
                       {/* Icon */}
@@ -248,22 +220,16 @@ const Activity: React.FC = () => {
                           <p className="truncate">{activity.description}</p>
                           <span className="w-1 h-1 rounded-full bg-white/20" />
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {activity.timestamp}
+                            <Clock className="w-3 h-3" />{" "}
+                            {formatDistanceToNow(
+                              parseISO(activity.created_at),
+                              {
+                                addSuffix: true,
+                              },
+                            )}
                           </span>
                         </div>
                       </div>
-
-                      {/* Amount / Value (Right Side) */}
-                      {activity.amount && (
-                        <div className="text-right shrink-0">
-                          <Badge
-                            variant="secondary"
-                            className="bg-white/5 border-white/10 font-mono font-normal"
-                          >
-                            {activity.amount}
-                          </Badge>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
