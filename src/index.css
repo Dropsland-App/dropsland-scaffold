@@ -367,3 +367,24 @@ div[role="dialog"] {
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  :root {
+    /* Make the border much more subtle */
+    --border: rgba(255, 255, 255, 0.08);
+    /* Make cards slightly translucent for glassmorphism */
+    --card: rgba(11, 16, 32, 0.6);
+    --card-foreground: #ffffff;
+  }
+}
+
+/* Add a global utility for glass effects */
+@layer utilities {
+  .glass-panel {
+    @apply bg-[#0b1020]/60 backdrop-blur-xl border border-white/5 shadow-2xl;
+  }
+
+  .glass-card {
+    @apply bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/5 transition-all duration-300;
+  }
+}

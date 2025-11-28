@@ -1,4 +1,3 @@
-// src/components/NftCard.tsx
 import React from "react";
 import {
   Card,
@@ -10,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Reward } from "../types/reward";
+import { cn } from "@/lib/utils";
 
 interface NftCardProps {
   reward: Reward;
@@ -29,48 +29,57 @@ export const NftCard: React.FC<NftCardProps> = ({
 }) => {
   return (
     <Card
-      className={`border-border/60 bg-background/60 flex flex-col h-full ${className}`}
+      className={cn(
+        "group relative flex flex-col overflow-hidden border-white/5 bg-[#151a2a] hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-300 p-0 gap-0",
+        className,
+      )}
     >
-      {/* Image Section */}
-      <div className="relative w-full aspect-square overflow-hidden rounded-t-xl bg-muted/20">
+      {/* FIXED: Image is now edge-to-edge (no padding on parent) */}
+      <div className="relative aspect-square w-full overflow-hidden bg-black/20">
         {reward.imageUrl ? (
           <img
             src={reward.imageUrl}
             alt={reward.title}
-            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-4xl">
-            🎁
+          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-purple-900/20 to-blue-900/20">
+            <span className="text-4xl">🎁</span>
           </div>
         )}
+
+        {/* Floating Badge */}
         <Badge
           variant="secondary"
-          className="absolute top-3 right-3 backdrop-blur-md bg-black/50 text-white hover:bg-black/70"
+          className="absolute top-3 right-3 backdrop-blur-md bg-black/60 text-white border border-white/10"
         >
           NFT
         </Badge>
       </div>
 
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-bold text-white leading-tight truncate">
-          {reward.title}
-        </CardTitle>
-        <CardDescription className="text-xs font-mono">
+      {/* Content Section */}
+      <CardHeader className="p-5 pb-2">
+        <div className="flex justify-between items-start gap-2">
+          <CardTitle className="text-lg font-bold text-white leading-tight line-clamp-1">
+            {reward.title}
+          </CardTitle>
+        </div>
+        <CardDescription className="text-xs font-mono text-purple-300/80">
           Issuer: {shortenAddress(reward.artistPublicKey)}
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col gap-4">
-        <p className="text-sm text-muted-foreground line-clamp-3 flex-1">
+      <CardContent className="p-5 pt-2 flex flex-col flex-1">
+        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
           {reward.description || "No description provided."}
         </p>
 
-        <div className="mt-auto pt-2">
+        {/* FIXED: Button pushed to bottom with mt-auto */}
+        <div className="mt-auto">
           <Button
             variant="outline"
-            className="w-full border-primary/20 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all"
+            className="w-full border-white/10 bg-white/5 hover:bg-purple-500 hover:text-white hover:border-transparent transition-all font-medium"
             onClick={() => onAction && onAction(reward)}
           >
             {actionLabel}
