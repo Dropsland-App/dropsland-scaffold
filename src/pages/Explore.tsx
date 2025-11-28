@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { BuyDialog } from "../components/BuyDialog";
+import { BuyDialog } from "../features/tokens/components/BuyDialog";
 import { RewardsDialog } from "../components/RewardsDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Sparkles, TrendingUp, Gift } from "lucide-react"; // Added icons
 import type { TokenDisplay } from "../types/artistToken";
-import { NftCard } from "../components/NftCard";
+import { NftCard } from "@/features/nfts/components/NftCard";
 import { useExploreContent } from "../hooks/useExploreContent";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 

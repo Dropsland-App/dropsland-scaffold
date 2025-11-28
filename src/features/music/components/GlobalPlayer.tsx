@@ -1,8 +1,8 @@
 import React from "react";
-import { useAudioStore } from "../../store/useAudioStore";
+import { useAudioStore } from "@/store/useAudioStore";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
-import { getPublicAssetUrl } from "../../services/music";
+import { getPublicAssetUrl } from "@/services/music";
 
 export const GlobalPlayer: React.FC = () => {
   const { currentTrack, isPlaying, togglePlay, progress } = useAudioStore();

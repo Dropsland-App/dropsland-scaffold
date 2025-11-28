@@ -10,7 +10,7 @@ import Activity from "./pages/Activity.tsx";
 import Profile from "./pages/Profile.tsx";
 import { OnboardingModal } from "./components/OnboardingModal.tsx";
 
-import { GlobalPlayer } from "./components/music/GlobalPlayer.tsx";
+import { GlobalPlayer } from "./features/music/components/GlobalPlayer";
 
 const MainLayout: React.FC = () => (
   <div className="flex min-h-screen flex-col bg-[#030712] text-foreground">

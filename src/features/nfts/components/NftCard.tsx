@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { Reward } from "../types/reward";
+import type { Reward } from "@/types/reward";
 import { cn } from "@/lib/utils";
 
 interface NftCardProps {

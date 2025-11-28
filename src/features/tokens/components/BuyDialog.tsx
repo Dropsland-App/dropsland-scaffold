@@ -1,7 +1,7 @@
 import React from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -9,13 +9,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "./ui/dialog";
-import { Alert, AlertDescription } from "./ui/alert";
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowDown, Loader2 } from "lucide-react";
-import { useBuyFlow } from "../hooks/useBuyFlow";
-import { useWallet } from "../hooks/useWallet";
+import { useBuyFlow } from "@/hooks/useBuyFlow";
+import { useWallet } from "@/hooks/useWallet";
 
-interface BuyDialogProps {
+export interface BuyDialogProps {
   visible: boolean;
   onClose: () => void;
   tokenSymbol: string;
