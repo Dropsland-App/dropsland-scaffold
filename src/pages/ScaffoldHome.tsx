@@ -82,7 +82,7 @@ const ScaffoldHome: React.FC = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="What do you want to listen to?"
-            className="pl-10 bg-background/50 border-border/40 rounded-full"
+            className="pl-10 bg-white/5 backdrop-blur-md border-white/10 rounded-full"
           />
         </div>
 
@@ -187,14 +187,17 @@ const ScaffoldHome: React.FC = () => {
           {/* Action Card based on Profile Type */}
           <div className="sticky top-24 space-y-6">
             {profileType === "DJ" ? (
-              <div className="rounded-xl bg-linear-to-br from-primary/20 to-background border border-primary/20 p-5">
-                <h3 className="font-bold text-lg mb-2 text-primary">
+              <div className="rounded-2xl bg-gradient-to-b from-[#1a1f2e] to-[#0b1020] border border-white/10 p-6 shadow-xl relative overflow-hidden">
+                {/* Add a subtle glow effect */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+                <h3 className="font-bold text-lg mb-1 text-white relative z-10">
                   DJ Dashboard
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground mb-4 relative z-10">
                   Your token $SOLAR is trending! Activity is up 40% this week.
                 </p>
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-4 relative z-10">
                   <div className="bg-background/50 p-3 rounded-lg text-center">
                     <span className="block text-2xl font-bold">1.2k</span>
                     <span className="text-[10px] uppercase text-muted-foreground">
@@ -209,7 +212,7 @@ const ScaffoldHome: React.FC = () => {
                   </div>
                 </div>
                 <Button
-                  className="w-full font-bold"
+                  className="w-full font-bold relative z-10"
                   variant="default"
                   onClick={() => void navigate("/profile")}
                 >

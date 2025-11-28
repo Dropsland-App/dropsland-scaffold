@@ -1,14 +1,8 @@
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Share2, PlayCircle } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
 
 export type PostType = "token_launch" | "nft_drop" | "update";
 
@@ -31,88 +25,85 @@ export interface FeedPost {
 
 export const FeedCard: React.FC<{ post: FeedPost }> = ({ post }) => {
   return (
-    <Card className="border-border/40 bg-background/60 hover:bg-background/80 transition-colors">
-      <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
-        <Avatar className="h-10 w-10 border border-border/50">
-          <AvatarImage src={post.artistAvatar} alt={post.artistName} />
-          <AvatarFallback>{post.artistName[0]}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center justify-between">
+    // Changed: Removed border, added subtle background hover, increased padding
+    <div className="group relative overflow-hidden rounded-2xl bg-[#111827]/40 p-0 transition-all hover:bg-[#111827]/60 border border-white/5 mb-6">
+      {/* Header */}
+      <div className="flex items-start justify-between p-5 pb-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10 border border-white/10">
+            <AvatarImage src={post.artistAvatar} />
+            <AvatarFallback>{post.artistName[0]}</AvatarFallback>
+          </Avatar>
+          <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground">
+              <span className="font-bold text-white text-sm hover:underline cursor-pointer">
                 {post.artistName}
               </span>
-              <span className="text-sm text-muted-foreground">
-                @{post.artistHandle}
+              <span className="text-xs text-muted-foreground">
+                · {post.timestamp}
               </span>
             </div>
-            <span className="text-xs text-muted-foreground">
-              {post.timestamp}
-            </span>
+            {post.type === "token_launch" && (
+              <Badge
+                variant="secondary"
+                className="mt-0.5 h-5 bg-primary/10 text-[10px] text-primary hover:bg-primary/20"
+              >
+                🚀 Token Launch
+              </Badge>
+            )}
           </div>
-          {post.type === "token_launch" && (
-            <Badge
-              variant="secondary"
-              className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-            >
-              🚀 Token Launch
-            </Badge>
-          )}
-          {post.type === "nft_drop" && (
-            <Badge
-              variant="outline"
-              className="border-purple-500/50 text-purple-400 bg-purple-500/10"
-            >
-              💎 NFT Drop
-            </Badge>
-          )}
         </div>
-      </CardHeader>
+        <button className="text-muted-foreground hover:text-white">
+          <MoreHorizontal className="h-5 w-5" />
+        </button>
+      </div>
 
-      <CardContent className="space-y-4 pb-3">
-        <p className="text-sm text-foreground/90 whitespace-pre-wrap">
+      {/* Content */}
+      <div className="px-5 pb-3">
+        <p className="text-sm leading-relaxed text-gray-300 whitespace-pre-wrap">
           {post.content}
         </p>
+      </div>
 
-        {post.image && (
-          <div className="relative overflow-hidden rounded-md border border-border/50">
+      {/* Image - Edge to Edge if desired, or rounded inner */}
+      {post.image && (
+        <div className="px-5 pb-4">
+          <div className="relative overflow-hidden rounded-xl border border-white/5">
             <img
               src={post.image}
               alt="Post content"
-              className="w-full h-auto object-cover max-h-[400px]"
+              className="w-full object-cover max-h-[500px]"
             />
-            {post.type === "update" && post.image.includes("cover") && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                <PlayCircle className="w-16 h-16 text-white" />
-              </div>
-            )}
           </div>
-        )}
-      </CardContent>
+        </div>
+      )}
 
-      <CardFooter className="flex flex-col gap-3 pt-0">
+      {/* Footer / Actions */}
+      <div className="flex items-center justify-between border-t border-white/5 px-5 py-3 bg-black/20">
+        <div className="flex gap-6">
+          <button className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-red-400 group/like">
+            <Heart className="h-4 w-4 group-hover/like:scale-110 transition-transform" />
+            <span>{post.stats.likes}</span>
+          </button>
+          <button className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-blue-400">
+            <MessageCircle className="h-4 w-4" />
+            <span>{post.stats.comments}</span>
+          </button>
+          <button className="flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-white">
+            <Share2 className="h-4 w-4" />
+          </button>
+        </div>
+
         {post.actionLabel && (
           <Button
-            className="w-full bg-foreground text-background hover:bg-foreground/90 font-semibold"
+            size="sm"
             onClick={post.onAction}
+            className="h-8 rounded-full font-semibold bg-white text-black hover:bg-gray-200"
           >
             {post.actionLabel}
           </Button>
         )}
-
-        <div className="flex w-full justify-between items-center pt-2 border-t border-border/40 text-muted-foreground">
-          <button className="flex items-center gap-2 text-xs hover:text-red-400 transition-colors">
-            <Heart className="w-4 h-4" /> {post.stats.likes}
-          </button>
-          <button className="flex items-center gap-2 text-xs hover:text-blue-400 transition-colors">
-            <MessageCircle className="w-4 h-4" /> {post.stats.comments}
-          </button>
-          <button className="flex items-center gap-2 text-xs hover:text-foreground transition-colors">
-            <Share2 className="w-4 h-4" /> Share
-          </button>
-        </div>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 };
