@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { CreateNftCollectionForm } from "@/features/nfts/components/CreateNftCollectionForm";
 import { CreateTokenForm } from "@/features/tokens/components/CreateTokenForm";
 import { SettingsDialog } from "../features/profile/components/SettingsDialog";
+import { UploadTrackDialog } from "../features/music/components/UploadTrackDialog";
 import { useOwnedNfts } from "../hooks/useOwnedNfts";
 import { CollectiblesSidebar } from "../features/wallet/components/CollectiblesSidebar";
 
@@ -41,6 +42,7 @@ const Profile: React.FC = () => {
   const [isNftFormVisible, setIsNftFormVisible] = useState(false);
   const [isTokenFormVisible, setIsTokenFormVisible] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -144,7 +146,7 @@ const Profile: React.FC = () => {
             <ProfileMusicTab
               tracks={artistTracks}
               isArtist={profileType === "DJ"}
-              onUpload={() => console.log("Upload track")}
+              onUpload={() => setIsUploadOpen(true)}
               onUnlockRequest={(track) => console.log("Unlock", track.title)}
             />
           </TabsContent>
@@ -202,6 +204,7 @@ const Profile: React.FC = () => {
           open={isSettingsOpen}
           onOpenChange={setIsSettingsOpen}
         />
+        <UploadTrackDialog open={isUploadOpen} onOpenChange={setIsUploadOpen} />
       </div>
     </div>
   );
