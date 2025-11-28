@@ -159,7 +159,7 @@ In `useBuyToken.ts` + Supabase service.
 - Validate external data with **Zod**
 - Use generated contract types, never manual typings
 - Token amounts → always `bigint`
-- Always check that the code compiles using `tsc -b` and `npm run build`
+- **IMPORTANT** Always check that the code compiles using `tsc -b`, `npm run lint` and `npm run build`
 
 ### 5.2 Rust
 
@@ -201,7 +201,8 @@ You will pass callbacks that return promises with void before them, to avoid typ
 
 ### Comments
 
-Avoid unnecessary comments, add concise and simple comments when they are really needed to understand what is happening on the code, or they why of a snippet.
+Avoid unnecessary comments, add concise and simple comments when they are really needed to understand what is happening on the code,
+or they why of a snippet.
 
 ---
 

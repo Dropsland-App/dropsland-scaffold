@@ -2,72 +2,17 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingArtists } from "../components/feed/TrendingArtists";
-import { FeedCard, type FeedPost } from "../components/feed/FeedCard";
+import { FeedCard } from "../components/feed/FeedCard";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfileType } from "../hooks/useProfileType";
 import { BuyDialog } from "../components/BuyDialog";
 import { listDistributedTokens } from "../services/artistTokens";
-
-// Extended interface to include token data for the buy flow
-interface HomeFeedPost extends Omit<FeedPost, "onAction"> {
-  tokenData?: {
-    symbol: string;
-    issuer: string;
-  };
-}
-
-// Mock Data with specific token details ready for the DB implementation
-const MOCK_FEED: HomeFeedPost[] = [
-  {
-    id: "1",
-    artistName: "DJ Solar",
-    artistHandle: "djsolar",
-    artistAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Solar",
-    timestamp: "2h ago",
-    type: "token_launch",
-    content:
-      "My official artist token $SOLAR is finally live! Holders get access to my unreleased folders and VIP tickets for the Summer Tour. Let's build this economy together. 🌞",
-    stats: { likes: 1240, comments: 85 },
-    actionLabel: "Buy $SOLAR",
-    // When DB is ready, this data will come from the relation to the token table
-    tokenData: {
-      symbol: "SOLAR",
-      // Using a placeholder issuer - in prod this comes from the DB
-      issuer: "GBKB...MOCK_ISSUER_ADDRESS",
-    },
-  },
-  {
-    id: "2",
-    artistName: "Neon Pulse",
-    artistHandle: "neonpulse",
-    artistAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Neon",
-    timestamp: "5h ago",
-    type: "nft_drop",
-    content:
-      "Dropping 50 'Genesis' Merch Passes. Owning one means you get a physical hoodie + lifetime guest list access.",
-    image:
-      "https://images.unsplash.com/photo-1576158187551-b3846f756510?q=80&w=2940&auto=format&fit=crop",
-    stats: { likes: 892, comments: 45 },
-    actionLabel: "Mint Pass (50 XLM)",
-    // NFT logic would go here
-  },
-  {
-    id: "3",
-    artistName: "Bass Mint",
-    artistHandle: "bassmint",
-    artistAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Bass",
-    timestamp: "1d ago",
-    type: "update",
-    content:
-      "Just uploaded the studio session from last night. Token holders can stream it now in the 'Exclusive' tab.",
-    image:
-      "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=2000&auto=format&fit=crop",
-    stats: { likes: 2100, comments: 312 },
-  },
-];
+import { useFeed } from "../hooks/useFeed";
+import { CreatePostDialog } from "../components/CreatePostDialog";
+import { formatDistanceToNow } from "date-fns";
 
 import { fetchTracks } from "../services/music";
 import { TrackCard } from "../components/music/TrackCard";
@@ -78,6 +23,8 @@ import type { Track } from "../types/music";
 const ScaffoldHome: React.FC = () => {
   const { profileType } = useProfileType();
   const navigate = useNavigate();
+  const { posts, isLoading } = useFeed();
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
   // 1. FETCH REAL TRACKS 🎵
   const { data: realTracks, isLoading: tracksLoading } = useQuery({
@@ -180,43 +127,52 @@ const ScaffoldHome: React.FC = () => {
         <div className="lg:col-span-8 space-y-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-foreground">Your Feed</h1>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" className="text-primary">
-                All
+
+            {/* Show "Create Post" button for DJs */}
+            {profileType === "DJ" && (
+              <Button size="sm" onClick={() => setIsPostModalOpen(true)}>
+                <PlusCircle className="w-4 h-4 mr-2" /> New Post
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground"
-              >
-                Music
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground"
-              >
-                Collectibles
-              </Button>
-            </div>
+            )}
           </div>
 
-          {MOCK_FEED.map((post) => (
-            <FeedCard
-              key={post.id}
-              post={{
-                ...post,
-                // Wire up the buy button if token data exists
-                onAction: post.tokenData
-                  ? () =>
-                      handleBuyClick(
-                        post.tokenData!.symbol,
-                        post.tokenData!.issuer,
-                      )
-                  : undefined,
-              }}
-            />
-          ))}
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading feed...
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No posts yet. Be the first!
+            </div>
+          ) : (
+            posts.map((post) => (
+              <FeedCard
+                key={post.id}
+                post={{
+                  id: post.id,
+                  // Map DB fields to UI fields
+                  artistName: post.profiles?.username || "Unknown Artist",
+                  artistHandle: post.artist_public_key.slice(0, 8),
+                  artistAvatar:
+                    post.profiles?.avatar_url ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.artist_public_key}`,
+                  timestamp: formatDistanceToNow(new Date(post.created_at), {
+                    addSuffix: true,
+                  }),
+                  type: post.type,
+                  content: post.content,
+                  image: post.image_url || undefined,
+                  stats: {
+                    likes: post.likes_count,
+                    comments: post.comments_count,
+                  },
+                  actionLabel:
+                    post.type === "token_launch" ? "Buy Token" : undefined, // Simplistic logic
+                  // onAction: ... wire up to buy dialog
+                }}
+              />
+            ))
+          )}
 
           <div className="py-8 text-center text-muted-foreground">
             <p>You're all caught up!</p>
@@ -370,6 +326,11 @@ const ScaffoldHome: React.FC = () => {
       </div>
 
       {/* Global Dialogs */}
+      <CreatePostDialog
+        open={isPostModalOpen}
+        onOpenChange={setIsPostModalOpen}
+      />
+
       <BuyDialog
         visible={buyDialogState.open}
         onClose={() => setBuyDialogState((prev) => ({ ...prev, open: false }))}
