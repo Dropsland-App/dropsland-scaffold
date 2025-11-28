@@ -1,22 +1,24 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingArtists } from "../components/feed/TrendingArtists";
-import { FeedCard } from "../components/feed/FeedCard";
+
 import { Button } from "@/components/ui/button";
 import { Search, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useProfileType } from "../hooks/useProfileType";
-import { BuyDialog } from "../components/BuyDialog";
+
 import { listDistributedTokens } from "../services/artistTokens";
 import { useFeed } from "../hooks/useFeed";
 import { CreatePostDialog } from "../components/CreatePostDialog";
 import { formatDistanceToNow } from "date-fns";
 
 import { fetchTracks } from "../services/music";
-import { TrackCard } from "../components/music/TrackCard";
+import { TrackCard } from "../features/music/components/TrackCard";
+import { BuyDialog } from "../features/tokens/components/BuyDialog";
 import type { Track } from "../types/music";
+import { TrendingArtists } from "@/features/social/components/TrendingArtists";
+import { FeedCard } from "@/features/social/components/FeedCard";
 
 // ... existing imports
 

@@ -5,20 +5,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
-import { Alert, AlertDescription } from "./ui/alert";
-import { CreationStage } from "../hooks/useTokenCreation";
-import { useWallet } from "../hooks/useWallet";
-import { connectWallet } from "../util/wallet";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CreationStage } from "@/hooks/useTokenCreation";
+import { useWallet } from "@/hooks/useWallet";
+import { connectWallet } from "@/util/wallet";
 import {
   useCreateTokenForm,
   FEE_TIERS,
   FeeTierType,
-} from "../hooks/useCreateTokenForm";
+} from "@/hooks/useCreateTokenForm";
 
 const LoadingView = ({ stage }: { stage: CreationStage }) => {
   const messages = {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CreateTokenForm } from "./CreateTokenForm";
+import { CreateTokenForm } from "@/features/tokens/components/CreateTokenForm";
 import { Button } from "./ui/button.tsx";
 
 export const CreateFungibleTokenButton: React.FC = () => {

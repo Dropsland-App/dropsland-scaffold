@@ -19,10 +19,10 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { useCreateReward } from "../hooks/useCreateReward";
-import { useArtistNftCollections } from "../hooks/useArtistNftCollections";
-import { useArtistRewards } from "../hooks/useArtistRewards";
-import type { Reward } from "../types/reward";
+import { useCreateReward } from "@/hooks/useCreateReward";
+import { useArtistNftCollections } from "@/hooks/useArtistNftCollections";
+import { useArtistRewards } from "@/hooks/useArtistRewards";
+import type { Reward } from "@/types/reward";
 
 interface RewardManagerCardProps {
   artistPublicKey?: string;

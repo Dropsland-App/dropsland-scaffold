@@ -1,10 +1,10 @@
 import React from "react";
 import { Play, Lock, Loader2, Pause, Music } from "lucide-react";
 
-import { useMusicAccess } from "../../hooks/useMusicAccess";
-import { useAudioStore } from "../../store/useAudioStore";
-import { getPublicAssetUrl } from "../../services/music";
-import type { Track } from "../../types/music";
+import { useMusicAccess } from "@/hooks/useMusicAccess";
+import { useAudioStore } from "@/store/useAudioStore";
+import { getPublicAssetUrl } from "@/services/music";
+import type { Track } from "@/types/music";
 import { cn } from "@/lib/utils";
 
 interface TrackCardProps {
