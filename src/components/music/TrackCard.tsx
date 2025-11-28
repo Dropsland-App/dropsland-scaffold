@@ -97,8 +97,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
               ? `Requires ${access.requirement}`
               : access.status === "locked" && access.reason === "nft_required"
                 ? `Requires ${access.requirement}`
-                : "Artist Name"}{" "}
-            {/* Replace with dynamic artist name */}
+                : track.profiles?.username || "Unknown Artist"}
           </p>
         </div>
       </CardContent>

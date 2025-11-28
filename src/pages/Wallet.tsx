@@ -1,4 +1,5 @@
 import React from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWallet } from "../hooks/useWallet";
 import { useWalletBalance } from "../hooks/useWalletBalance";
 import { connectWallet, type Balance } from "../util/wallet";
@@ -129,19 +130,33 @@ const Wallet: React.FC = () => {
                   creditBalances.map((balance) => (
                     <div
                       key={`${balance.asset_code}-${balance.asset_issuer}`}
-                      className="rounded-lg border border-border/40 bg-background/40 p-3"
+                      className="flex items-center justify-between rounded-xl border border-border/40 bg-card/50 p-3 transition-all hover:bg-card hover:border-primary/20 hover:shadow-sm"
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-base font-semibold text-white">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 border border-border/50 bg-muted shadow-inner">
+                          <AvatarImage
+                            src={`https://api.dicebear.com/7.x/shapes/svg?seed=${balance.asset_code}`}
+                            alt={balance.asset_code}
+                          />
+                          <AvatarFallback className="text-xs font-bold">
+                            {balance.asset_code[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-sm text-foreground leading-none">
                             {balance.asset_code}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            Issuer: {balance.asset_issuer.slice(0, 10)}...
-                            {balance.asset_issuer.slice(-6)}
+                          <p
+                            className="text-[10px] text-muted-foreground font-mono"
+                            title={balance.asset_issuer}
+                          >
+                            {balance.asset_issuer.slice(0, 4)}...
+                            {balance.asset_issuer.slice(-4)}
                           </p>
                         </div>
-                        <span className="font-mono text-sm text-amber-200">
+                      </div>
+                      <div className="text-right">
+                        <span className="block font-mono text-sm font-bold text-primary">
                           {balance.balance}
                         </span>
                       </div>

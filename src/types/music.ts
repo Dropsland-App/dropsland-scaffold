@@ -21,11 +21,15 @@ export interface Track {
   artist_tokens?: {
     token_code: string;
     token_name: string;
-    artist_public_key: string; // Assuming this is available or we use track.artist_public_key
+    artist_public_key: string;
   };
   rewards?: {
     title: string;
     nft_contract_id: string;
+  };
+  profiles?: {
+    username: string;
+    avatar_url: string;
   };
 }
 

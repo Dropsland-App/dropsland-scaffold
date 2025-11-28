@@ -62,18 +62,21 @@ ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
 
 -- 4.1 Core Identity
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
-    "wallet_address" character varying NOT NULL,
-    "username" character varying,
-    "avatar_url" "text",
-    "role" character varying CHECK (("role")::"text" = ANY (ARRAY['DJ'::character varying, 'FAN'::character varying]::"text[]")),
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "wallet_address" character varying(56) NOT NULL,
+    "username" text NOT NULL,
+    "bio" text,
+    "avatar_url" text,
+    "role" character varying(20) DEFAULT 'FAN'::character varying,
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "bio" "text"
+    CONSTRAINT "profiles_pkey" PRIMARY KEY ("wallet_address"),
+    CONSTRAINT "profiles_id_key" UNIQUE ("id")
 );
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
 
 -- 4.2 Artist Tokens (The "Career" Asset)
 CREATE TABLE IF NOT EXISTS "public"."artist_tokens" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "artist_public_key" character varying(56) NOT NULL,
     "artist_email" character varying(255),
     "artist_name" character varying(255),
@@ -103,7 +106,7 @@ ALTER TABLE "public"."artist_tokens" OWNER TO "postgres";
 
 -- 4.3 NFT Rewards (The "Perks")
 CREATE TABLE IF NOT EXISTS "public"."rewards" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "artist_public_key" character varying(56) NOT NULL,
     "nft_contract_id" character varying(56) NOT NULL,
     "title" character varying(255) NOT NULL,
@@ -114,32 +117,41 @@ CREATE TABLE IF NOT EXISTS "public"."rewards" (
 );
 ALTER TABLE "public"."rewards" OWNER TO "postgres";
 
--- 4.4 Music Content (NEW - The "Spotify" Layer)
+-- 4.4 Social Feed (The "Posts")
+CREATE TABLE IF NOT EXISTS "public"."posts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL PRIMARY KEY,
+    "artist_public_key" character varying(56) NOT NULL,
+    "type" character varying(20) NOT NULL CHECK (type IN ('token_launch', 'nft_drop', 'update')),
+    "content" text NOT NULL,
+    "image_url" text,
+    "reference_id" text,
+    "likes_count" integer DEFAULT 0,
+    "comments_count" integer DEFAULT 0,
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+ALTER TABLE "public"."posts" OWNER TO "postgres";
+
+-- 4.5 Music Content (The "Spotify" Layer)
 CREATE TABLE IF NOT EXISTS "public"."tracks" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "artist_public_key" character varying(56) NOT NULL,
     "title" character varying(255) NOT NULL,
     "description" "text",
     "cover_image_url" "text",
-
-    -- Storage Paths
-    "audio_file_path" "text" NOT NULL,        -- Private Bucket
-    "preview_file_path" "text",               -- Public Bucket
-
-    -- Access Control Logic
+    "audio_file_path" "text" NOT NULL,
+    "preview_file_path" "text",
     "is_public" boolean DEFAULT false,
-    "required_token_id" "uuid",               -- Gated by Fungible
+    "required_token_id" "uuid",
     "min_token_amount" numeric(20,7) DEFAULT 0,
-    "required_reward_id" "uuid",              -- Gated by NFT
-
+    "required_reward_id" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
 ALTER TABLE "public"."tracks" OWNER TO "postgres";
 
--- 4.5 Engagement (NEW - The "Social" Layer)
+-- 4.6 Engagement
 CREATE TABLE IF NOT EXISTS "public"."play_history" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "user_public_key" character varying(56) NOT NULL,
     "track_id" "uuid" NOT NULL,
     "listened_seconds" integer DEFAULT 0,
@@ -148,18 +160,18 @@ CREATE TABLE IF NOT EXISTS "public"."play_history" (
 ALTER TABLE "public"."play_history" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."comments" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "track_id" "uuid" NOT NULL,
     "user_public_key" character varying(56) NOT NULL,
     "content" "text" NOT NULL,
-    "user_tier" character varying(50), -- e.g. "Gold Member"
+    "user_tier" character varying(50),
     "created_at" timestamp with time zone DEFAULT "now"()
 );
 ALTER TABLE "public"."comments" OWNER TO "postgres";
 
--- 4.6 Marketplace & Finance
+-- 4.7 Marketplace & Finance
 CREATE TABLE IF NOT EXISTS "public"."marketplace_listings" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "token_id" "uuid" NOT NULL,
     "seller_public_key" character varying(56) NOT NULL,
     "amount_for_sale" numeric(20,7) NOT NULL,
@@ -175,7 +187,7 @@ CREATE TABLE IF NOT EXISTS "public"."marketplace_listings" (
 ALTER TABLE "public"."marketplace_listings" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."marketplace_sales" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "listing_id" "uuid" NOT NULL,
     "token_id" "uuid" NOT NULL,
     "buyer_public_key" character varying(56) NOT NULL,
@@ -189,9 +201,9 @@ CREATE TABLE IF NOT EXISTS "public"."marketplace_sales" (
 );
 ALTER TABLE "public"."marketplace_sales" OWNER TO "postgres";
 
--- 4.7 Analytics & System
+-- 4.8 Analytics & System
 CREATE TABLE IF NOT EXISTS "public"."platform_analytics" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "total_tokens_created" integer DEFAULT 0,
     "total_artists" integer DEFAULT 0,
     "total_tokens_distributed" numeric(30,7) DEFAULT 0,
@@ -205,7 +217,7 @@ CREATE TABLE IF NOT EXISTS "public"."platform_analytics" (
 ALTER TABLE "public"."platform_analytics" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."token_distributions" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "token_id" "uuid" NOT NULL,
     "artist_public_key" character varying(56) NOT NULL,
     "artist_amount" numeric(20,7) NOT NULL,
@@ -216,7 +228,7 @@ CREATE TABLE IF NOT EXISTS "public"."token_distributions" (
 ALTER TABLE "public"."token_distributions" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."token_metadata" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "token_id" "uuid" NOT NULL,
     "website_url" "text",
     "twitter_handle" character varying(100),
@@ -234,7 +246,7 @@ CREATE TABLE IF NOT EXISTS "public"."token_metadata" (
 ALTER TABLE "public"."token_metadata" OWNER TO "postgres";
 
 CREATE TABLE IF NOT EXISTS "public"."token_transactions" (
-    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL PRIMARY KEY,
     "token_id" "uuid" NOT NULL,
     "tx_hash" character varying(64) NOT NULL,
     "tx_type" character varying(50) NOT NULL,
@@ -276,24 +288,9 @@ CREATE OR REPLACE VIEW "public"."top_tokens_by_volume" AS
 ALTER VIEW "public"."top_tokens_by_volume" OWNER TO "postgres";
 
 -- =============================================================================
--- 6. CONSTRAINTS & KEYS
+-- 6. FOREIGN KEYS
 -- =============================================================================
 
--- 6.1 Primary Keys
-ALTER TABLE ONLY "public"."profiles" ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("wallet_address");
-ALTER TABLE ONLY "public"."artist_tokens" ADD CONSTRAINT "artist_tokens_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."rewards" ADD CONSTRAINT "rewards_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."tracks" ADD CONSTRAINT "tracks_pkey" PRIMARY KEY ("id"); -- NEW
-ALTER TABLE ONLY "public"."play_history" ADD CONSTRAINT "play_history_pkey" PRIMARY KEY ("id"); -- NEW
-ALTER TABLE ONLY "public"."comments" ADD CONSTRAINT "comments_pkey" PRIMARY KEY ("id"); -- NEW
-ALTER TABLE ONLY "public"."marketplace_listings" ADD CONSTRAINT "marketplace_listings_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."marketplace_sales" ADD CONSTRAINT "marketplace_sales_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."platform_analytics" ADD CONSTRAINT "platform_analytics_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."token_distributions" ADD CONSTRAINT "token_distributions_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."token_metadata" ADD CONSTRAINT "token_metadata_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "public"."token_transactions" ADD CONSTRAINT "token_transactions_pkey" PRIMARY KEY ("id");
-
--- 6.2 Foreign Keys
 -- Link Artist Tokens to Profiles
 ALTER TABLE ONLY "public"."artist_tokens"
     ADD CONSTRAINT "fk_artist" FOREIGN KEY ("artist_public_key") REFERENCES "public"."profiles"("wallet_address");
@@ -302,18 +299,22 @@ ALTER TABLE ONLY "public"."artist_tokens"
 ALTER TABLE ONLY "public"."rewards"
     ADD CONSTRAINT "fk_reward_artist" FOREIGN KEY ("artist_public_key") REFERENCES "public"."profiles"("wallet_address");
 
--- Link Tracks (NEW)
+-- Link Posts to Profiles
+ALTER TABLE ONLY "public"."posts"
+    ADD CONSTRAINT "posts_artist_public_key_fkey" FOREIGN KEY ("artist_public_key") REFERENCES "public"."profiles"("wallet_address");
+
+-- Link Tracks
 ALTER TABLE ONLY "public"."tracks"
     ADD CONSTRAINT "fk_track_artist" FOREIGN KEY ("artist_public_key") REFERENCES "public"."profiles"("wallet_address"),
     ADD CONSTRAINT "fk_track_token" FOREIGN KEY ("required_token_id") REFERENCES "public"."artist_tokens"("id"),
     ADD CONSTRAINT "fk_track_reward" FOREIGN KEY ("required_reward_id") REFERENCES "public"."rewards"("id");
 
--- Link Play History (NEW)
+-- Link Play History
 ALTER TABLE ONLY "public"."play_history"
     ADD CONSTRAINT "fk_history_user" FOREIGN KEY ("user_public_key") REFERENCES "public"."profiles"("wallet_address"),
     ADD CONSTRAINT "fk_history_track" FOREIGN KEY ("track_id") REFERENCES "public"."tracks"("id");
 
--- Link Comments (NEW)
+-- Link Comments
 ALTER TABLE ONLY "public"."comments"
     ADD CONSTRAINT "fk_comment_user" FOREIGN KEY ("user_public_key") REFERENCES "public"."profiles"("wallet_address"),
     ADD CONSTRAINT "fk_comment_track" FOREIGN KEY ("track_id") REFERENCES "public"."tracks"("id") ON DELETE CASCADE;
@@ -326,13 +327,15 @@ ALTER TABLE ONLY "public"."token_distributions" ADD CONSTRAINT "token_distributi
 ALTER TABLE ONLY "public"."token_metadata" ADD CONSTRAINT "token_metadata_token_id_fkey" FOREIGN KEY ("token_id") REFERENCES "public"."artist_tokens"("id") ON DELETE CASCADE;
 ALTER TABLE ONLY "public"."token_transactions" ADD CONSTRAINT "token_transactions_token_id_fkey" FOREIGN KEY ("token_id") REFERENCES "public"."artist_tokens"("id") ON DELETE CASCADE;
 
--- 6.3 Unique Constraints
+-- =============================================================================
+-- 7. UNIQUE CONSTRAINTS
+-- =============================================================================
 ALTER TABLE ONLY "public"."platform_analytics" ADD CONSTRAINT "unique_period" UNIQUE ("period_start", "period_end");
 ALTER TABLE ONLY "public"."artist_tokens" ADD CONSTRAINT "unique_token_per_artist" UNIQUE ("token_code", "artist_public_key");
 ALTER TABLE ONLY "public"."token_transactions" ADD CONSTRAINT "unique_tx_hash" UNIQUE ("tx_hash");
 
 -- =============================================================================
--- 7. INDEXES
+-- 8. INDEXES
 -- =============================================================================
 -- Existing
 CREATE INDEX "idx_artist_tokens_artist" ON "public"."artist_tokens" USING "btree" ("artist_public_key");
@@ -341,59 +344,71 @@ CREATE INDEX "idx_artist_tokens_status" ON "public"."artist_tokens" USING "btree
 CREATE INDEX "idx_marketplace_listings_active" ON "public"."marketplace_listings" USING "btree" ("status", "expires_at") WHERE ("status"::text = 'active'::text);
 CREATE INDEX "idx_rewards_artist" ON "public"."rewards" USING "btree" ("artist_public_key");
 
--- NEW Indexes for Content & Social
+-- Posts
+CREATE INDEX "idx_posts_created_at" ON "public"."posts" ("created_at" DESC);
+CREATE INDEX "idx_posts_artist" ON "public"."posts" ("artist_public_key");
+
+-- Music & Social
 CREATE INDEX "idx_tracks_artist" ON "public"."tracks" USING "btree" ("artist_public_key");
 CREATE INDEX "idx_tracks_public" ON "public"."tracks" USING "btree" ("is_public");
 CREATE INDEX "idx_comments_track" ON "public"."comments" USING "btree" ("track_id");
 CREATE INDEX "idx_play_history_user" ON "public"."play_history" USING "btree" ("user_public_key");
 
 -- =============================================================================
--- 8. TRIGGERS
+-- 9. TRIGGERS
 -- =============================================================================
 CREATE OR REPLACE TRIGGER "update_artist_tokens_updated_at" BEFORE UPDATE ON "public"."artist_tokens" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 CREATE OR REPLACE TRIGGER "update_marketplace_listings_updated_at" BEFORE UPDATE ON "public"."marketplace_listings" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 CREATE OR REPLACE TRIGGER "update_token_metadata_updated_at" BEFORE UPDATE ON "public"."token_metadata" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
--- NEW Trigger for Tracks
 CREATE OR REPLACE TRIGGER "update_tracks_updated_at" BEFORE UPDATE ON "public"."tracks" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 -- =============================================================================
--- 9. SECURITY (RLS)
+-- 10. SECURITY (RLS)
 -- =============================================================================
 -- Enable RLS
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."posts" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."artist_tokens" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."marketplace_listings" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "public"."tracks" ENABLE ROW LEVEL SECURITY; -- NEW
-ALTER TABLE "public"."comments" ENABLE ROW LEVEL SECURITY; -- NEW
-ALTER TABLE "public"."play_history" ENABLE ROW LEVEL SECURITY; -- NEW
+ALTER TABLE "public"."tracks" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."comments" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."play_history" ENABLE ROW LEVEL SECURITY;
 
--- Policies
+-- Profiles Policies
+CREATE POLICY "Public can view profiles" ON "public"."profiles" FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own profile" ON "public"."profiles" FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update their own profile" ON "public"."profiles" FOR UPDATE USING (true);
+
+-- Posts Policies
+CREATE POLICY "Public can view posts" ON "public"."posts" FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can create posts" ON "public"."posts" FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- Market & Token Policies
 CREATE POLICY "Anyone can view active listings" ON "public"."marketplace_listings" FOR SELECT USING ("status"::text = 'active'::text);
 CREATE POLICY "Anyone can view distributed tokens" ON "public"."artist_tokens" FOR SELECT USING ("status"::text = 'distributed'::text);
 CREATE POLICY "Artists can view own tokens" ON "public"."artist_tokens" FOR SELECT USING ((auth.uid())::text = (artist_public_key)::text);
 CREATE POLICY "Sellers can update own listings" ON "public"."marketplace_listings" FOR UPDATE USING ((auth.uid())::text = (seller_public_key)::text);
 
--- NEW Policies for Spotify Layer
--- Tracks: Public read, Artist write
+-- Tracks Policies
 CREATE POLICY "Public tracks view" ON "public"."tracks" FOR SELECT USING (true);
 CREATE POLICY "Artists manage own tracks" ON "public"."tracks" FOR ALL USING ((auth.uid())::text = (artist_public_key)::text);
 
--- Comments: Public read, Authenticated write
+-- Comments Policies
 CREATE POLICY "Public comments view" ON "public"."comments" FOR SELECT USING (true);
 CREATE POLICY "Auth users comment" ON "public"."comments" FOR INSERT WITH CHECK ((auth.uid())::text = (user_public_key)::text);
 
--- Play History: Private (User only)
+-- Play History Policies
 CREATE POLICY "Users view own history" ON "public"."play_history" FOR SELECT USING ((auth.uid())::text = (user_public_key)::text);
 CREATE POLICY "Users log own plays" ON "public"."play_history" FOR INSERT WITH CHECK ((auth.uid())::text = (user_public_key)::text);
 
 -- =============================================================================
--- 10. PERMISSIONS
+-- 11. PERMISSIONS
 -- =============================================================================
 GRANT USAGE ON SCHEMA "public" TO "postgres", "anon", "authenticated", "service_role";
 
--- Grant all tables to authenticated/service_role
 GRANT ALL ON ALL TABLES IN SCHEMA "public" TO "postgres", "authenticated", "service_role";
 GRANT ALL ON ALL SEQUENCES IN SCHEMA "public" TO "postgres", "authenticated", "service_role";
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA "public" TO "postgres", "authenticated", "service_role";
 
--- Grant specific read access to anon (if needed for public pages)
-GRANT SELECT ON TABLE "public"."profiles", "public"."artist_tokens", "public"."marketplace_listings", "public"."rewards", "public"."tracks", "public"."comments" TO "anon";
+-- Public Read Access
+GRANT SELECT ON TABLE "public"."profiles", "public"."posts", "public"."artist_tokens", "public"."marketplace_listings", "public"."rewards", "public"."tracks", "public"."comments" TO "anon";

@@ -13,7 +13,8 @@ export async function fetchTracks(artistPublicKey?: string): Promise<Track[]> {
       `
       *,
       artist_tokens:required_token_id (token_code, token_name, artist_public_key),
-      rewards:required_reward_id (title)
+      rewards:required_reward_id (title),
+      profiles:artist_public_key (username, avatar_url)
     `,
     )
     .order("created_at", { ascending: false });
