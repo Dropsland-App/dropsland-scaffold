@@ -88,9 +88,9 @@ export const SendDialog: React.FC<SendDialogProps> = ({
       })
         .addOperation(
           Operation.payment({
-            destination: recipient,
+            destination: recipient.trim(),
             asset: Asset.native(), // Sending XLM
-            amount: amount,
+            amount: trimmedAmount,
           }),
         )
         .setTimeout(30)
@@ -121,15 +121,15 @@ export const SendDialog: React.FC<SendDialogProps> = ({
           tx_hash: result.hash,
           tx_type: "payment",
           from_address: address,
-          to_address: recipient,
-          amount: amount,
+          to_address: recipient.trim(),
+          amount: trimmedAmount,
           // token_id is NULL because this is an XLM transfer
         });
       }
       // --- END FIX ---
 
       toast.success("Sent successfully!", {
-        description: `${amount} XLM sent to ${recipient.slice(0, 4)}...${recipient.slice(-4)}`,
+        description: `${trimmedAmount} XLM sent to ${recipient.trim().slice(0, 4)}...${recipient.trim().slice(-4)}`,
       });
 
       // Cleanup & Close
