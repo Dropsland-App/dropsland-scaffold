@@ -46,22 +46,30 @@ export const SendDialog: React.FC<SendDialogProps> = ({
     setIsLoading(true);
 
     // Validate recipient address format
-    if (!/^G[A-Z0-9]{55}$/.test(recipient)) {
+    if (!/^G[A-Z0-9]{55}$/.test(recipient.trim())) {
       setError("Invalid recipient address format");
       setIsLoading(false);
       return;
     }
 
     // Validate recipient is not the same as sender
-    if (recipient === address) {
+    if (recipient.trim() === address) {
       setError("Cannot send to your own address");
       setIsLoading(false);
       return;
     }
 
     // Validate amount
-    if (parseFloat(amount) <= 0) {
-      setError("Amount must be greater than zero");
+    const trimmedAmount = amount.trim();
+    if (!trimmedAmount) {
+      setError("Amount is required");
+      setIsLoading(false);
+      return;
+    }
+    
+    const parsedAmount = Number(trimmedAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError("Amount must be a valid number greater than zero");
       setIsLoading(false);
       return;
     }
