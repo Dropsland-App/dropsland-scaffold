@@ -22,6 +22,7 @@ import {
   BASE_FEE,
 } from "@stellar/stellar-sdk";
 import { network as networkConfig } from "@/contracts/util";
+import { validateAmount } from "@/utils/amount";
 
 interface SendDialogProps {
   open: boolean;
@@ -63,26 +64,14 @@ export const SendDialog: React.FC<SendDialogProps> = ({
       return;
     }
 
-    // Validate amount
-    if (!trimmedAmount) {
-      setError("Amount is required");
+    // Validate amount using util
+    const amountValidation = validateAmount(trimmedAmount);
+    if (!amountValidation.valid) {
+      setError(amountValidation.error ?? "Invalid amount");
       setIsLoading(false);
       return;
     }
-    
-    // Ensure amount is a valid decimal number (no scientific notation or hex)
-    if (!/^\d+(\.\d+)?$/.test(trimmedAmount)) {
-      setError("Amount must be a valid number");
-      setIsLoading(false);
-      return;
-    }
-    
-    const parsedAmount = parseFloat(trimmedAmount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Amount must be greater than zero");
-      setIsLoading(false);
-      return;
-    }
+    const normalizedAmount = amountValidation.normalized as string;
 
     try {
       // 1. Setup Horizon Server
@@ -100,7 +89,7 @@ export const SendDialog: React.FC<SendDialogProps> = ({
           Operation.payment({
             destination: trimmedRecipient,
             asset: Asset.native(), // Sending XLM
-            amount: trimmedAmount,
+            amount: normalizedAmount,
           }),
         )
         .setTimeout(30)
@@ -132,14 +121,14 @@ export const SendDialog: React.FC<SendDialogProps> = ({
           tx_type: "payment",
           from_address: address,
           to_address: trimmedRecipient,
-          amount: trimmedAmount,
+          amount: normalizedAmount,
           // token_id is NULL because this is an XLM transfer
         });
       }
       // --- END FIX ---
 
       toast.success("Sent successfully!", {
-        description: `${trimmedAmount} XLM sent to ${trimmedRecipient.slice(0, 4)}...${trimmedRecipient.slice(-4)}`,
+        description: `${normalizedAmount} XLM sent to ${trimmedRecipient.slice(0, 4)}...${trimmedRecipient.slice(-4)}`,
       });
 
       // Cleanup & Close
