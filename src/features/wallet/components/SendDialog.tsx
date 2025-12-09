@@ -70,9 +70,16 @@ export const SendDialog: React.FC<SendDialogProps> = ({
       return;
     }
     
-    const parsedAmount = Number(trimmedAmount);
+    // Ensure amount is a valid decimal number (no scientific notation or hex)
+    if (!/^\d+(\.\d+)?$/.test(trimmedAmount)) {
+      setError("Amount must be a valid number");
+      setIsLoading(false);
+      return;
+    }
+    
+    const parsedAmount = parseFloat(trimmedAmount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Amount must be a valid number greater than zero");
+      setError("Amount must be greater than zero");
       setIsLoading(false);
       return;
     }
