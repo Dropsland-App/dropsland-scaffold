@@ -1,9 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return */
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL! as string;
-const supabaseKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY! as string;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from "@/util/supabase";
 
 export interface UserProfile {
   wallet_address: string;

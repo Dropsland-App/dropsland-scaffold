@@ -3,6 +3,7 @@ import { Client as DjNftClient } from "dj_nft";
 import { toast } from "sonner";
 import { networkPassphrase, rpcUrl } from "../contracts/util";
 import { useWallet } from "./useWallet";
+import { supabase } from "@/util/supabase";
 
 export function useClaimReward() {
   const { address, signTransaction } = useWallet();
@@ -46,6 +47,16 @@ export function useClaimReward() {
         });
 
         const hash = sentTx.sendTransactionResponse?.hash;
+
+        // --- START FIX: Record Activity ---
+        if (hash && rewardId) {
+          await supabase.from("reward_claims").insert({
+            reward_id: rewardId,
+            claimer_public_key: address,
+            tx_hash: hash,
+          });
+        }
+        // --- END FIX ---
 
         toast.success("Reward claimed", {
           id: toastId,

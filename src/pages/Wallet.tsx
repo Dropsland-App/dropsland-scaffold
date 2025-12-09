@@ -1,218 +1,136 @@
 import React from "react";
+
 import { useWallet } from "../hooks/useWallet";
 import { useWalletBalance } from "../hooks/useWalletBalance";
-import { connectWallet, type Balance } from "../util/wallet";
+import { connectWallet } from "../util/wallet";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useOwnedNfts } from "../hooks/useOwnedNfts";
-
-const isCreditAsset = (
-  balance: Balance,
-): balance is Balance & { asset_code: string; asset_issuer: string } => {
-  return (
-    balance.asset_type !== "native" &&
-    balance.asset_type !== "liquidity_pool_shares" &&
-    "asset_code" in balance &&
-    "asset_issuer" in balance
-  );
-};
+import { Wallet as WalletIcon, Loader2 } from "lucide-react";
+import { PortfolioCard } from "../features/wallet/PortfolioCard";
+import { AssetList } from "../features/wallet/components/AssetList";
+import { CollectiblesSidebar } from "../features/wallet/components/CollectiblesSidebar";
+import { ReceiveDialog } from "../features/wallet/components/ReceiveDialog";
+import { SendDialog } from "../features/wallet/components/SendDialog";
+import { toast } from "sonner";
 
 const Wallet: React.FC = () => {
   const { address, isPending } = useWallet();
-  const { xlm, balances, isLoading, error } = useWalletBalance();
+  const [isReceiveOpen, setIsReceiveOpen] = React.useState(false);
+  const [isSendOpen, setIsSendOpen] = React.useState(false);
+  const { xlm, balances, isLoading } = useWalletBalance();
   const {
     data: ownedCollections = [],
     isPending: ownedLoading,
     error: ownedError,
     refetch: refetchOwned,
   } = useOwnedNfts(address);
-  const creditBalances = balances.filter(isCreditAsset);
-  const formatContract = (value: string) =>
-    value.length > 12 ? `${value.slice(0, 6)}…${value.slice(-4)}` : value;
+
+  const copyToClipboard = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      toast.success("Address copied to clipboard");
+    }
+  };
+
+  const openExplorer = () => {
+    if (address) {
+      window.open(
+        `https://stellar.expert/explorer/testnet/account/${address}`,
+        "_blank",
+      );
+    }
+  };
 
   return (
-    <div className="container mx-auto space-y-8 px-4 py-10">
-      <section className="space-y-2">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-300">
-          Manage Assets
-        </p>
-        <h1 className="text-4xl font-bold text-white">Wallet</h1>
-        <p className="text-muted-foreground">
-          Check balances, review issued tokens, and understand what&apos;s
-          inside your Dropsland wallet.
-        </p>
+    <div className="container max-w-5xl mx-auto px-4 py-10 pb-24 space-y-10">
+      {/* 1. Header Section */}
+      <section className="relative">
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative space-y-2">
+          <Badge
+            variant="outline"
+            className="border-primary/30 text-primary bg-primary/5 mb-2"
+          >
+            <WalletIcon className="w-3 h-3 mr-2" /> Manage Assets
+          </Badge>
+          <h1 className="text-4xl font-bold text-white tracking-tight">
+            Your Wallet
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-xl">
+            Track your balance, manage your artist tokens, and view your
+            collected NFTs all in one place.
+          </p>
+        </div>
       </section>
 
       {!address ? (
-        <Card className="border-border/60 bg-background/70">
-          <CardHeader>
-            <CardTitle>Connect your wallet</CardTitle>
-            <CardDescription>
-              Hook up Freighter or any Stellar-compatible wallet to fetch
-              balances and start interacting with Dropsland.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              type="button"
-              onClick={() => void connectWallet()}
-              disabled={isPending}
-            >
-              {isPending ? "Connecting..." : "Connect Wallet"}
-            </Button>
-          </CardContent>
-        </Card>
+        // Disconnected State
+        <div className="flex flex-col items-center justify-center py-20 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm text-center">
+          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-6">
+            <WalletIcon className="w-8 h-8 text-white/50" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Connect to Dropsland
+          </h2>
+          <p className="text-muted-foreground max-w-md mb-8">
+            Connect your Stellar wallet to view your balances and start
+            collecting music assets.
+          </p>
+          <Button
+            size="lg"
+            onClick={() => void connectWallet()}
+            disabled={isPending}
+            className="font-bold px-8"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...
+              </>
+            ) : (
+              "Connect Wallet"
+            )}
+          </Button>
+        </div>
       ) : (
-        <div className="space-y-6">
-          <Card className="border-border/60 bg-background/70">
-            <CardHeader>
-              <CardTitle>Wallet connected</CardTitle>
-              <CardDescription>
-                Your Stellar account is live on Dropsland.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border border-border/50 bg-[#05080f] p-4 font-mono text-xs text-muted-foreground break-all">
-                {address}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* 2. Main Portfolio Card (Left Column) */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* The "Black Card" - Portfolio Overview */}
+            <PortfolioCard
+              balanceXlm={xlm}
+              address={address || ""}
+              isLoading={isLoading}
+              onCopyAddress={copyToClipboard}
+              onViewExplorer={openExplorer}
+              onSend={() => setIsSendOpen(true)}
+              onReceive={() => setIsReceiveOpen(true)}
+            />
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="border-border/60 bg-background/60">
-              <CardHeader>
-                <CardTitle>Balance</CardTitle>
-                <CardDescription>
-                  Live XLM balance + funding status.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                    XLM
-                  </p>
-                  <p className="text-4xl font-bold text-white">
-                    {isLoading ? "—" : `${xlm} XLM`}
-                  </p>
-                </div>
-                {error ? (
-                  <p className="text-sm text-red-400">{error.message}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {Number(xlm.replace(/,/g, "")) > 0
-                      ? "Account funded"
-                      : "Fund your account to deploy and interact."}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60 bg-background/60">
-              <CardHeader>
-                <CardTitle>Held tokens</CardTitle>
-                <CardDescription>
-                  Issued assets detected in this wallet.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {creditBalances.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No tokens yet. Collect some artist assets to see them here.
-                  </p>
-                ) : (
-                  creditBalances.map((balance) => (
-                    <div
-                      key={`${balance.asset_code}-${balance.asset_issuer}`}
-                      className="rounded-lg border border-border/40 bg-background/40 p-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-base font-semibold text-white">
-                            {balance.asset_code}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Issuer: {balance.asset_issuer.slice(0, 10)}...
-                            {balance.asset_issuer.slice(-6)}
-                          </p>
-                        </div>
-                        <span className="font-mono text-sm text-amber-200">
-                          {balance.balance}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+            {/* Token List */}
+            <AssetList balances={balances} />
           </div>
 
-          <Card className="border-border/60 bg-background/60">
-            <CardHeader>
-              <CardTitle>Owned NFTs</CardTitle>
-              <CardDescription>
-                Dropsland NFTs unlock IRL perks, early releases, and token-gated
-                chats.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ownedLoading ? (
-                <p className="text-sm text-muted-foreground">
-                  Checking Soroban contracts for your collectibles...
-                </p>
-              ) : ownedError ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-red-400">
-                    {ownedError instanceof Error
-                      ? ownedError.message
-                      : "Unable to load owned NFTs"}
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void refetchOwned()}
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : ownedCollections.length === 0 ? (
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>
-                    No NFTs minted yet. Claim a reward from an artist to see it
-                    here.
-                  </p>
-                  <ul className="list-disc space-y-1 pl-4">
-                    <li>Private listening parties & green room access.</li>
-                    <li>Token airdrops + allowlist fast tracks.</li>
-                    <li>Physical merch and IRL meetups.</li>
-                  </ul>
-                </div>
-              ) : (
-                <div className="space-y-3 text-sm">
-                  {ownedCollections.map((collection) => (
-                    <div
-                      key={collection.contractId}
-                      className="rounded-md border border-border/40 bg-background/50 p-3"
-                    >
-                      <p className="text-sm font-semibold text-white">
-                        Collection {formatContract(collection.contractId)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Token IDs: {collection.tokenIds.join(", ")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* 3. Sidebar - Collectibles / NFTs (Right Column) */}
+          <div className="lg:col-span-4 space-y-6">
+            <CollectiblesSidebar
+              collections={ownedCollections}
+              isLoading={ownedLoading}
+              error={ownedError}
+              onRetry={() => void refetchOwned()}
+            />
+          </div>
         </div>
+      )}
+      {address && (
+        <>
+          <ReceiveDialog
+            address={address}
+            open={isReceiveOpen}
+            onOpenChange={setIsReceiveOpen}
+          />
+          <SendDialog open={isSendOpen} onOpenChange={setIsSendOpen} />
+        </>
       )}
     </div>
   );

@@ -1,141 +1,356 @@
 import React, { useState } from "react";
-import { useProfileType } from "../hooks/useProfileType";
-import { CreateTokenForm } from "../components/CreateTokenForm";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Search, PlusCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useProfileType } from "../hooks/useProfileType";
 
-const fanHighlights = [
-  {
-    title: "Direct Connection",
-    body: "Support artists without intermediaries and unlock conversations, perks, and gated drops built entirely on-chain.",
-  },
-  {
-    title: "Exclusive Access",
-    body: "Collect NFTs that unlock early track debuts, private listening sessions, and IRL event invites.",
-  },
-  {
-    title: "True Ownership",
-    body: "Every collectible and token lives on Stellar—portable, transparent, and always yours.",
-  },
-  {
-    title: "Community Power",
-    body: "Join artist-led economies where fans help shape releases, perks, and experiences.",
-  },
-];
+import { listDistributedTokens } from "../services/artistTokens";
+import { useFeed } from "../hooks/useFeed";
+import { CreatePostDialog } from "../components/CreatePostDialog";
+import { formatDistanceToNow } from "date-fns";
 
-const Home: React.FC = () => {
+import { fetchTracks } from "../services/music";
+import { TrackCard } from "../features/music/components/TrackCard";
+import { BuyDialog } from "../features/tokens/components/BuyDialog";
+import type { Track } from "../types/music";
+import { TrendingArtists } from "@/features/social/components/TrendingArtists";
+import { FeedCard } from "@/features/social/components/FeedCard";
+
+// ... existing imports
+
+const ScaffoldHome: React.FC = () => {
   const { profileType } = useProfileType();
-  const [showCreateTokenForm, setShowCreateTokenForm] = useState(false);
+  const navigate = useNavigate();
+  const { posts, isLoading } = useFeed();
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
-  const handleTokenCreationSuccess = () => {
-    console.log("Token created successfully!");
-    // You can add additional logic here, such as:
-    // - Refreshing token list
-    // - Showing a success notification
-    // - Redirecting to token page
+  // 1. FETCH REAL TRACKS 🎵
+  const { data: realTracks, isLoading: tracksLoading } = useQuery({
+    queryKey: ["publicTracks"],
+    queryFn: () => fetchTracks(), // Fetches all latest tracks
+  });
+
+  // Fetch suggested artists (Real data from Factory/DB)
+  const { data: suggestedData, isLoading: isLoadingSuggestions } = useQuery({
+    queryKey: ["suggestedArtists"],
+    queryFn: () => listDistributedTokens(5, 0),
+    staleTime: 60000,
+    retry: false,
+  });
+
+  // State for Buy Dialog
+  const [buyDialogState, setBuyDialogState] = useState<{
+    open: boolean;
+    symbol: string;
+    issuer: string;
+  }>({
+    open: false,
+    symbol: "",
+    issuer: "",
+  });
+
+  const handleBuyClick = (symbol: string, issuer: string) => {
+    setBuyDialogState({
+      open: true,
+      symbol,
+      issuer,
+    });
+  };
+
+  // Handle "Unlock" click on a locked TrackCard
+  const handleUnlockRequest = (track: Track) => {
+    if (track.required_token_id && track.artist_tokens) {
+      // It's gated by a Token -> Open Buy Dialog
+      setBuyDialogState({
+        open: true,
+        symbol: track.artist_tokens.token_code,
+        issuer: track.artist_tokens.artist_public_key,
+      });
+    } else if (track.required_reward_id) {
+      // It's gated by an NFT -> You might want to open the RewardsDialog or a specific NFT page
+      console.log("NFT required:", track.rewards?.title);
+    }
   };
 
   return (
-    <div className="container mx-auto space-y-12 px-4 py-10">
-      <section className="space-y-4">
-        <p className="text-sm font-semibold uppercase tracking-[0.35em] text-amber-300">
-          Where Music Meets Ownership
-        </p>
-        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-          Welcome to Dropsland
-        </h1>
-        <p className="text-lg text-muted-foreground sm:text-xl">
-          Dropsland is a Web3 playground where DJs spin up tokens, fans collect
-          cultural artifacts, and communities share in the upside. Everything is
-          powered by open, global Stellar rails.
-        </p>
-        <p className="text-muted-foreground">
-          Mint a token, drop an exclusive mix, or unlock gated perks—all without
-          waiting on a platform roadmap. You own the moment.
-        </p>
-      </section>
+    <div className="container max-w-5xl mx-auto px-4 py-6 min-h-screen">
+      {/* 1. Mobile/Header Search & Discovery */}
+      <div className="flex flex-col gap-6 mb-8">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="What do you want to listen to?"
+            className="pl-10 bg-white/5 backdrop-blur-md border-white/10 rounded-full"
+          />
+        </div>
 
-      {profileType === "DJ" ? (
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">
-              DJ Command Center
-            </h2>
-            <p className="mt-2 max-w-2xl text-muted-foreground">
-              Launch your social token, gate experiences with NFTs, and keep all
-              the context in one Stellar-native dashboard.
-            </p>
-          </div>
-          <Card className="bg-background/70 border-border/60">
-            <CardHeader>
-              <CardTitle>Spin up your token in minutes</CardTitle>
-              <CardDescription>
-                Choose an asset code, deploy a SAC contract, and start inviting
-                your community. No Solidity. No gatekeepers.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                <li>Share drops, perks, or merch with token holders.</li>
-                <li>Reward superfans with tiered access and experiences.</li>
-                <li>
-                  Broadcast updates across Dropsland, social, and IRL moments.
-                </li>
-              </ul>
-              <Button
-                onClick={() => setShowCreateTokenForm(true)}
-                className="w-full sm:w-auto"
-              >
-                Create Your Token
+        {/* NEW: FRESH DROPS SECTION 🎵 */}
+        <div className="mb-2">
+          <h2 className="text-xl font-bold text-foreground mb-4">
+            Fresh Drops
+          </h2>
+
+          {tracksLoading ? (
+            <div className="text-sm text-muted-foreground">
+              Loading beats...
+            </div>
+          ) : realTracks?.length === 0 ? (
+            <div className="p-6 border border-dashed border-border/40 rounded-xl text-center text-muted-foreground">
+              No tracks uploaded yet. Be the first DJ to drop!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {realTracks?.map((track) => (
+                <TrackCard
+                  key={track.id}
+                  track={track}
+                  onUnlockRequest={handleUnlockRequest}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Trending Section */}
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4">
+            Trending Creators
+          </h2>
+          <TrendingArtists />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* 2. Main Feed (Left Column on Desktop) */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-foreground">Your Feed</h1>
+
+            {/* Show "Create Post" button for DJs */}
+            {profileType === "DJ" && (
+              <Button size="sm" onClick={() => setIsPostModalOpen(true)}>
+                <PlusCircle className="w-4 h-4 mr-2" /> New Post
               </Button>
-            </CardContent>
-          </Card>
-        </section>
-      ) : (
-        <section className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">
-              Discover Artists & Communities
-            </h2>
-            <p className="mt-2 max-w-2xl text-muted-foreground">
-              Collect exclusive drops, hop into token-gated chats, and follow
-              the artists defining next season&apos;s sound.
-            </p>
+            )}
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {fanHighlights.map((item) => (
-              <Card
-                key={item.title}
-                className="border-border/50 bg-gradient-to-b from-background/70 to-background/40"
-              >
-                <CardHeader className="px-5">
-                  <CardTitle className="text-lg text-amber-200">
-                    {item.title}
-                  </CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    {item.body}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
 
-      {/* Create Token Form */}
-      <CreateTokenForm
-        visible={showCreateTokenForm}
-        onClose={() => setShowCreateTokenForm(false)}
-        onSuccess={handleTokenCreationSuccess}
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading feed...
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No posts yet. Be the first!
+            </div>
+          ) : (
+            posts.map((post) => (
+              <FeedCard
+                key={post.id}
+                post={{
+                  id: post.id,
+                  // Map DB fields to UI fields
+                  artistName: post.profiles?.username || "Unknown Artist",
+                  artistHandle: post.artist_public_key.slice(0, 8),
+                  artistAvatar:
+                    post.profiles?.avatar_url ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.artist_public_key}`,
+                  timestamp: formatDistanceToNow(new Date(post.created_at), {
+                    addSuffix: true,
+                  }),
+                  type: post.type,
+                  content: post.content,
+                  image: post.image_url || undefined,
+                  stats: {
+                    likes: post.likes_count,
+                    comments: post.comments_count,
+                  },
+                  actionLabel:
+                    post.type === "token_launch" ? "Buy Token" : undefined,
+                  onAction:
+                    post.type === "token_launch"
+                      ? () =>
+                          handleBuyClick(
+                            post.reference_id || "TOKEN",
+                            post.artist_public_key,
+                          )
+                      : undefined,
+                }}
+              />
+            ))
+          )}
+
+          <div className="py-8 text-center text-muted-foreground">
+            <p>You're all caught up!</p>
+            <Button variant="link" className="text-primary">
+              Discover more artists
+            </Button>
+          </div>
+        </div>
+
+        {/* 3. Sidebar (Right Column on Desktop - Hidden on Mobile) */}
+        <div className="hidden lg:block lg:col-span-4 space-y-6">
+          {/* Action Card based on Profile Type */}
+          <div className="sticky top-24 space-y-6">
+            {profileType === "DJ" ? (
+              <div className="rounded-2xl bg-gradient-to-b from-[#1a1f2e] to-[#0b1020] border border-white/10 p-6 shadow-xl relative overflow-hidden">
+                {/* Add a subtle glow effect */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+                <h3 className="font-bold text-lg mb-1 text-white relative z-10">
+                  DJ Dashboard
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4 relative z-10">
+                  Your token $SOLAR is trending! Activity is up 40% this week.
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-4 relative z-10">
+                  <div className="bg-background/50 p-3 rounded-lg text-center">
+                    <span className="block text-2xl font-bold">1.2k</span>
+                    <span className="text-[10px] uppercase text-muted-foreground">
+                      Holders
+                    </span>
+                  </div>
+                  <div className="bg-background/50 p-3 rounded-lg text-center">
+                    <span className="block text-2xl font-bold">4.5k</span>
+                    <span className="text-[10px] uppercase text-muted-foreground">
+                      Volume
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  className="w-full font-bold relative z-10"
+                  variant="default"
+                  onClick={() => void navigate("/profile")}
+                >
+                  Go to Profile Manager
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-muted/30 border border-border/50 p-5">
+                <h3 className="font-bold text-lg mb-2">
+                  Complete your collection
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You need 2 more tokens to unlock "VIP Status" with Neon Pulse.
+                </p>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => void navigate("/wallet")}
+                >
+                  View Wallet
+                </Button>
+              </div>
+            )}
+
+            {/* Suggested Follows - Now with Real Data */}
+            <div className="rounded-xl border border-border/40 bg-background/40 p-5">
+              <h3 className="font-semibold text-foreground mb-4">
+                Suggested for you
+              </h3>
+              <div className="space-y-4">
+                {isLoadingSuggestions ? (
+                  // Loading Skeletons
+                  [1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                        <div className="space-y-1">
+                          <div className="h-3 w-20 bg-muted rounded animate-pulse" />
+                          <div className="h-2 w-12 bg-muted rounded animate-pulse" />
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs"
+                        disabled
+                      >
+                        Follow
+                      </Button>
+                    </div>
+                  ))
+                ) : suggestedData?.tokens && suggestedData.tokens.length > 0 ? (
+                  // Real Data Mapping
+                  suggestedData.tokens.slice(0, 4).map((token) => (
+                    <div
+                      key={token.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 border border-border/50">
+                          <AvatarImage
+                            src={
+                              token.image_url ||
+                              `https://api.dicebear.com/7.x/avataaars/svg?seed=${token.artist_name}`
+                            }
+                          />
+                          <AvatarFallback>
+                            {token.artist_name?.[0] || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
+                            {token.artist_name || "Unknown Artist"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate max-w-[120px]">
+                            ${token.token_code}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() =>
+                          handleBuyClick(
+                            token.token_code,
+                            token.artist_public_key,
+                          )
+                        }
+                      >
+                        Buy
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  // Empty State
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      No suggestions yet.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void navigate("/explore")}
+                    >
+                      Explore All
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Global Dialogs */}
+      <CreatePostDialog
+        open={isPostModalOpen}
+        onOpenChange={setIsPostModalOpen}
+      />
+
+      <BuyDialog
+        visible={buyDialogState.open}
+        onClose={() => setBuyDialogState((prev) => ({ ...prev, open: false }))}
+        tokenSymbol={buyDialogState.symbol}
+        tokenIssuer={buyDialogState.issuer}
       />
     </div>
   );
 };
 
-export default Home;
+export default ScaffoldHome;

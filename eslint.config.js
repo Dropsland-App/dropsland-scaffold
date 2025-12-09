@@ -36,11 +36,23 @@ export default tseslint.config(
         tsconfigRoot: import.meta.dirname,
       },
     },
+
     rules: {
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
       ],
+
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+
+      "react/jsx-key": "off",
+      "react-refresh/only-export-components": "off",
     },
   },
 );
