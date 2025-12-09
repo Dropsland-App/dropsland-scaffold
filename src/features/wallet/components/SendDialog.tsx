@@ -45,6 +45,27 @@ export const SendDialog: React.FC<SendDialogProps> = ({
     setError(null);
     setIsLoading(true);
 
+    // Validate recipient address format
+    if (!/^G[A-Z0-9]{55}$/.test(recipient)) {
+      setError("Invalid recipient address format");
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate recipient is not the same as sender
+    if (recipient === address) {
+      setError("Cannot send to your own address");
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate amount
+    if (parseFloat(amount) <= 0) {
+      setError("Amount must be greater than zero");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // 1. Setup Horizon Server
       const server = new Horizon.Server(networkConfig.horizonUrl);
