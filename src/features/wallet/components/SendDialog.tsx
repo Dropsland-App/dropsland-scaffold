@@ -45,22 +45,25 @@ export const SendDialog: React.FC<SendDialogProps> = ({
     setError(null);
     setIsLoading(true);
 
+    // Trim inputs once
+    const trimmedRecipient = recipient.trim();
+    const trimmedAmount = amount.trim();
+
     // Validate recipient address format
-    if (!/^G[A-Z0-9]{55}$/.test(recipient.trim())) {
+    if (!/^G[A-Z0-9]{55}$/.test(trimmedRecipient)) {
       setError("Invalid recipient address format");
       setIsLoading(false);
       return;
     }
 
     // Validate recipient is not the same as sender
-    if (recipient.trim() === address) {
+    if (trimmedRecipient === address) {
       setError("Cannot send to your own address");
       setIsLoading(false);
       return;
     }
 
     // Validate amount
-    const trimmedAmount = amount.trim();
     if (!trimmedAmount) {
       setError("Amount is required");
       setIsLoading(false);
@@ -88,7 +91,7 @@ export const SendDialog: React.FC<SendDialogProps> = ({
       })
         .addOperation(
           Operation.payment({
-            destination: recipient.trim(),
+            destination: trimmedRecipient,
             asset: Asset.native(), // Sending XLM
             amount: trimmedAmount,
           }),
@@ -121,7 +124,7 @@ export const SendDialog: React.FC<SendDialogProps> = ({
           tx_hash: result.hash,
           tx_type: "payment",
           from_address: address,
-          to_address: recipient.trim(),
+          to_address: trimmedRecipient,
           amount: trimmedAmount,
           // token_id is NULL because this is an XLM transfer
         });
@@ -129,7 +132,7 @@ export const SendDialog: React.FC<SendDialogProps> = ({
       // --- END FIX ---
 
       toast.success("Sent successfully!", {
-        description: `${trimmedAmount} XLM sent to ${recipient.trim().slice(0, 4)}...${recipient.trim().slice(-4)}`,
+        description: `${trimmedAmount} XLM sent to ${trimmedRecipient.slice(0, 4)}...${trimmedRecipient.slice(-4)}`,
       });
 
       // Cleanup & Close
