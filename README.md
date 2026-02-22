@@ -293,4 +293,7 @@ The backend logic is not a traditional server but a set of serverless functions 
 
 ## 📜 License
 
-This project is licensed under the **Apache License 2.0**. See the `LICENSE` file for details.
+This project operates under a dual-license model:
+
+- The **Smart Contracts** (`contracts/`) are open-source and licensed under the **Apache License 2.0**. See `contracts/LICENSE` for details.
+- The **Platform Code** (frontend, backend, and all other files) is proprietary and **All Rights Reserved** by Dropsland. See `LICENSE` for details.

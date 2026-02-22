@@ -202,7 +202,7 @@ You will pass callbacks that return promises with void before them, to avoid typ
 ### Comments
 
 Avoid unnecessary comments, add concise and simple comments when they are really needed to understand what is happening on the code,
-or they why of a snippet.
+or the why of a snippet.
 
 ---
 
