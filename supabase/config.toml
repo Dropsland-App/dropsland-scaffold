@@ -358,3 +358,8 @@ entrypoint = "./functions/secure-stream/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/secure-stream/*.html" ]
+
+[functions.list-distributed-tokens]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/list-distributed-tokens/index.ts"

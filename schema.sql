@@ -360,6 +360,73 @@ ALTER VIEW "public"."activity_feed" OWNER TO "postgres";
 -- 6. FUNCTIONS REQUIRING TABLES
 -- =============================================================================
 
+CREATE OR REPLACE FUNCTION "public"."list_distributed_tokens"(
+    "limit_count" integer DEFAULT 100,
+    "offset_count" integer DEFAULT 0
+)
+RETURNS TABLE(
+    "id" uuid,
+    "artist_public_key" character varying,
+    "artist_email" character varying,
+    "artist_name" character varying,
+    "token_code" character varying,
+    "token_name" character varying,
+    "total_supply" numeric,
+    "description" text,
+    "image_url" text,
+    "platform_fee_bps" integer,
+    "artist_amount" numeric,
+    "platform_amount" numeric,
+    "status" character varying,
+    "trustline_tx_hash" character varying,
+    "emission_tx_hash" character varying,
+    "distribution_tx_hash" character varying,
+    "created_at" timestamp with time zone,
+    "distributed_at" timestamp with time zone,
+    "updated_at" timestamp with time zone,
+    "metadata" jsonb
+)
+LANGUAGE "sql"
+STABLE
+AS $$
+    SELECT
+        at.id,
+        at.artist_public_key,
+        at.artist_email,
+        at.artist_name,
+        at.token_code,
+        at.token_name,
+        at.total_supply,
+        at.description,
+        at.image_url,
+        at.platform_fee_bps,
+        at.artist_amount,
+        at.platform_amount,
+        at.status,
+        at.trustline_tx_hash,
+        at.emission_tx_hash,
+        at.distribution_tx_hash,
+        at.created_at,
+        at.distributed_at,
+        at.updated_at,
+        COALESCE(
+            (
+                SELECT row_to_json(tm)::jsonb
+                FROM "public"."token_metadata" tm
+                WHERE tm.token_id = at.id
+                ORDER BY tm.created_at DESC
+                LIMIT 1
+            ),
+            'null'::jsonb
+        ) AS metadata
+    FROM "public"."artist_tokens" at
+    WHERE at.status = 'distributed'
+    ORDER BY at.distributed_at DESC NULLS LAST, at.created_at DESC
+    LIMIT GREATEST(limit_count, 0)
+    OFFSET GREATEST(offset_count, 0);
+$$;
+ALTER FUNCTION "public"."list_distributed_tokens"(integer, integer) OWNER TO "postgres";
+
 CREATE OR REPLACE FUNCTION "public"."get_token_stats"("token_uuid" "uuid")
 RETURNS TABLE("total_holders" bigint, "total_transactions" bigint, "total_volume_xlm" numeric, "avg_price_xlm" numeric)
 LANGUAGE "plpgsql"
@@ -560,5 +627,6 @@ GRANT USAGE ON SCHEMA "public" TO "postgres", "anon", "authenticated", "service_
 GRANT ALL ON ALL TABLES IN SCHEMA "public" TO "postgres", "authenticated", "service_role";
 GRANT ALL ON ALL SEQUENCES IN SCHEMA "public" TO "postgres", "authenticated", "service_role";
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA "public" TO "postgres", "authenticated", "service_role";
+GRANT EXECUTE ON FUNCTION "public"."list_distributed_tokens"(integer, integer) TO "anon", "authenticated", "service_role";
 GRANT SELECT ON TABLE "public"."profiles", "public"."posts", "public"."artist_tokens", "public"."marketplace_listings", "public"."rewards", "public"."tracks", "public"."comments", "public"."post_likes", "public"."reward_claims", "public"."token_transactions", "public"."marketplace_sales" TO "anon";
 GRANT SELECT ON "public"."activity_feed" TO "anon";
